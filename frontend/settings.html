@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 设置</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js"></script>
+<script>async function renderSettings() {
+
+const app = document.getElementById('app');
+renderTopbar('settings.html');
+  const cfg = await fetchJSON(`${API}/config`);
+  const blurOn = _loadState('blur', {on: false}).on;
+  const fields = [
+    {key:'token',label:'Token (JWT)',type:'password',ph:'修改时输入新值'},
+    {key:'nonce',label:'Nonce (32位)',type:'text',ph:'修改时输入新值'},
+    {key:'proxy',label:'代理地址',type:'text',ph:'http://127.0.0.1:7890'},
+    {key:'api_base',label:'API 地址',type:'text',ph:'https://picaapi.go2778.com'},
+    {key:'image_proxy_domain',label:'图片代理域名',type:'text',ph:'go2778.com'},
+    {key:'page_concurrency',label:'图片并发数',type:'number',ph:'3'},
+    {key:'chapter_concurrency',label:'章节并发数',type:'number',ph:'3'},
+    {key:'comic_concurrency',label:'漫画并发数',type:'number',ph:'1 (同时下几部)'},
+    {key:'max_retries',label:'最大重试次数',type:'number',ph:'3'},
+    {key:'download_dir',label:'下载目录',type:'text',ph:'downloads'},
+    {key:'cover_dir',label:'封面下载目录',type:'text',ph:'covers'},
+  ];
+
+  app.innerHTML = `
+    <h2 style="margin-bottom:20px">⚙️ 设置</h2>
+
+    <!-- 登录区域 -->
+    <div style="max-width:640px;background:#1a1a1a;border-radius:8px;padding:16px;margin-bottom:24px;border:1px solid #2a2a2a">
+      <h3 style="margin:0 0 12px;font-size:1em">🔐 账号登录</h3>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label style="color:#aaa;font-size:.75em">邮箱</label>
+          <input id="loginEmail" type="text" placeholder="your@email.com"
+            style="width:100%;padding:8px 10px;border:1px solid #333;border-radius:6px;background:#111;color:#ddd;font-size:.85em;margin-top:2px">
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label style="color:#aaa;font-size:.75em">密码</label>
+          <input id="loginPass" type="password" placeholder="输入密码"
+            style="width:100%;padding:8px 10px;border:1px solid #333;border-radius:6px;background:#111;color:#ddd;font-size:.85em;margin-top:2px">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="button" id="btnLogin" class="btn btn-primary" style="font-size:.85em;padding:8px 16px">登录</button>
+          <button type="button" id="btnLogout" class="btn" style="background:#333;color:#f87171;font-size:.85em;padding:8px 16px">退出登录</button>
+        </div>
+      </div>
+      <div id="loginResult" style="margin-top:8px;font-size:.8em"></div>
+    </div>
+
+    <div style="max-width:640px;margin-bottom:20px">
+      <label style="color:#aaa;font-size:.85em;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="chkBlur" ${blurOn?'checked':''} onchange="_saveState('blur',{on:this.checked});location.reload()">
+        🌫 模糊模式（不加载图片，方便测试）
+      </label>
+    </div>
+    <form id="settingsForm" style="max-width:640px">
+      ${fields.map(f => `
+        <div style="margin-bottom:16px">
+          <label style="display:block;color:#aaa;font-size:.85em;margin-bottom:4px">${f.label}</label>
+          <input name="${f.key}" type="${f.type}" placeholder="${f.ph}" value="${cfg[f.key]||''}"
+            style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#ddd;font-size:.9em">
+          ${f.key === 'token' ? '<div style="margin-top:6px;display:flex;gap:6px;align-items:center"><button type="button" id="btnTestToken" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:6px 14px">🔑 检查</button><button type="button" id="btnRefreshToken" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:6px 14px">🔄 刷新</button><span id="tokenResult" style="margin-left:6px;font-size:.8em"></span></div>' : ''}
+          ${f.key === 'download_dir' || f.key === 'cover_dir' ? '<button type="button" class="btnPickDir btn" style="background:#333;color:#ddd;margin-top:6px;font-size:.8em;padding:6px 14px" data-target="'+f.key+'">📂 浏览...</button>' : ''}
+        </div>
+      `).join('')}
+      <button type="submit" class="btn btn-primary" style="margin-top:8px">💾 保存设置</button>
+      <span id="saveMsg" style="margin-left:12px;color:#4ade80;font-size:.85em;display:none">已保存</span>
+    </form>
+  `;
+
+  document.getElementById('settingsForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = {};
+    for (const [k,v] of fd) data[k] = v;
+    for (const f of fields) {
+      if (f.type === 'number' && data[f.key]) data[f.key] = parseFloat(data[f.key]);
+    }
+    await fetch(`${API}/config`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+    });
+    const msg = document.getElementById('saveMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  };
+
+  // 目录选择器按钮
+  document.querySelectorAll('.btnPickDir').forEach(btn => {
+    btn.onclick = async () => {
+      const target = btn.dataset.target;
+      const input = document.querySelector(`[name="${target}"]`);
+      const initial = input ? input.value : '';
+      btn.disabled = true;
+      btn.textContent = '选择中...';
+      try {
+        const r = await fetch(`${API}/pick-directory`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({initial})
+        });
+        const j = await r.json();
+        if (j.ok && j.path && input) {
+          input.value = j.path;
+        }
+      } catch(e) {
+        // 无操作
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📂 浏览...';
+      }
+    };
+  });
+
+  document.getElementById('btnTestToken').onclick = async () => {
+    const btn = document.getElementById('btnTestToken');
+    const res = document.getElementById('tokenResult');
+    btn.disabled = true;
+    btn.textContent = '检查中...';
+    res.innerHTML = '<span style="color:#888">测试中...</span>';
+    try {
+      const fd = new FormData(document.getElementById('settingsForm'));
+      const data = {};
+      for (const [k,v] of fd) data[k] = v;
+      for (const f of fields) {
+        if (f.type === 'number' && data[f.key]) data[f.key] = parseFloat(data[f.key]);
+      }
+      const r = await fetch(`${API}/config/test-token`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+      });
+      const j = await r.json();
+      if (j.ok) {
+        const cls = j.remaining_hours > 48 ? '#4ade80' : j.remaining_hours > 0 ? '#fbbf24' : '#f87171';
+        res.innerHTML = `<span style="color:#4ade80">✓ 有效</span> <span style="color:#888">| ${j.user} | 收藏${j.favourites_total}部 | 过期: ${j.expires} <span style="color:${cls}">(${j.remaining_hours}h)</span></span>`;
+      } else {
+        res.innerHTML = `<span style="color:#f87171">✗ ${j.error}</span> <span style="color:#888">| 过期: ${j.expires} | 剩余${j.remaining_hours}h</span>`;
+      }
+    } catch(e) {
+      res.innerHTML = `<span style="color:#f87171">请求失败: ${e.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔑 检查';
+    }
+  };
+
+  document.getElementById('btnRefreshToken').onclick = async () => {
+    const btn = document.getElementById('btnRefreshToken');
+    const res = document.getElementById('tokenResult');
+    const emailEl = document.getElementById('loginEmail');
+    const passEl = document.getElementById('loginPass');
+    let email = (emailEl && emailEl.value || '').trim();
+    let pass = (passEl && passEl.value || '').trim();
+
+    if (!email) {
+      // 从当前 token 解码邮箱
+      try {
+        const cfg = await fetchJSON(`${API}/config`);
+        const token = cfg.token || '';
+        if (token && token.includes('.')) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          email = payload.email || '';
+          if (emailEl) emailEl.value = email;
+        }
+      } catch(e) {}
+    }
+
+    if (!email) {
+      res.innerHTML = '<span style=\"color:#f87171\">无法获取邮箱，请在登录表单中填写</span>';
+      return;
+    }
+
+    if (!pass) {
+      res.innerHTML = '<span style=\"color:#fbbf24\">请输入密码后点击刷新</span>';
+      if (passEl) passEl.focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '刷新中...';
+    res.innerHTML = '<span style=\"color:#888\">正在刷新...</span>';
+
+    try {
+      const r = await fetch(`${API}/login`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email, password: pass})
+      });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        res.innerHTML = `<span style=\"color:#4ade80\">✓ 已刷新 — ${j.user}，过期: ${j.expires} (${j.remaining_hours}h)</span>`;
+        updateTokenStatus(true);
+        setTimeout(() => renderSettings(), 1500);
+      } else {
+        const err = j.detail || j.error || r.statusText;
+        res.innerHTML = `<span style=\"color:#f87171\">✗ ${err}</span>`;
+      }
+    } catch(e) {
+      res.innerHTML = `<span style=\"color:#f87171\">请求失败: ${e.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 刷新';
+    }
+  };
+
+  document.getElementById('btnLogin').onclick = async () => {
+    const btn = document.getElementById('btnLogin');
+    const res = document.getElementById('loginResult');
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    if (!email || !pass) { res.innerHTML = '<span style=\"color:#f87171\">请输入邮箱和密码</span>'; return; }
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+    res.innerHTML = '<span style=\"color:#888\">正在登录...</span>';
+    try {
+      const r = await fetch(`${API}/login`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email, password: pass})
+      });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        let html = `<span style=\"color:#4ade80\">✓ 登录成功 — ${j.user} (${j.email})，过期: ${j.expires} (${j.remaining_hours}h)</span>`;
+        if (j.debug) html += `<details style=\"margin-top:4px\"><summary style=\"color:#888;font-size:.7em;cursor:pointer\">API 原始响应</summary><pre style=\"color:#888;font-size:.7em;max-height:400px;overflow:auto;background:#111;padding:8px;border-radius:4px;margin-top:4px\">${j.debug}</pre></details>`;
+        res.innerHTML = html;
+        document.getElementById('loginPass').value = '';
+        updateTokenStatus(true);
+        setTimeout(() => renderSettings(), 2000);
+      } else {
+        const err = j.detail || j.error || r.statusText;
+        let html = `<span style=\"color:#f87171\">✗ ${err}</span>`;
+        if (j.debug) html += `<div style=\"margin-top:4px;color:#888;font-size:.75em;max-height:200px;overflow:auto;white-space:pre-wrap;background:#111;padding:8px;border-radius:4px\">DEBUG: ${j.debug}</div>`;
+        res.innerHTML = html;
+      }
+    } catch(e) {
+      res.innerHTML = `<span style=\"color:#f87171\">请求失败: ${e.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '登录';
+    }
+  };
+
+  // 退出登录
+  document.getElementById('btnLogout').onclick = async () => {
+    if (!confirm('确定退出登录？将清除已保存的 token。')) return;
+    await fetch(API + '/logout', {method:'POST'});
+    sessionStorage.removeItem('tokenStatus');
+    location.reload();
+  };
+}
+
+renderSettings();</script>
+</body>
+</html>

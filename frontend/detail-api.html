@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 详情</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('');
+
+async function renderDetail(comicId) {
+  try {
+    const data = await fetchJSON(`${API}/comics/${encodeURIComponent(comicId)}`);
+    const m = data.meta || {};
+    const chs = data.chapters || [];
+    const cover = data.cover_url || '';
+
+    app.innerHTML = `
+      <button class="btn-back" onclick="history.back()">← 返回</button>
+      <div class="detail-header">
+        ${cover ? `<img src="${resolveUrl(cover)}" alt="">` : ''}
+        <div class="meta">
+          <h2>${m.title || '?'}</h2>
+          <p>作者: ${m.author||'?'} | ${m.chineseTeam ? '汉化: '+m.chineseTeam+' | ' : ''}${m.status||'?'}</p>
+          <p>${m.pagesCount||0}P | ${m.epsCount||0}话 | 👁 ${(m.totalViews||0).toLocaleString()} | ❤️ ${(m.totalLikes||0).toLocaleString()}</p>
+          ${m.categories ? `<p>分类: ${m.categories.join(', ')}</p>` : ''}
+          ${m.tags ? `<p>标签: ${m.tags.slice(0,15).join(', ')}</p>` : ''}
+        </div>
+      </div>
+      ${m.description ? `<div class="desc">${m.description}</div>` : ''}
+      ${chs.length > 0 ? `
+        <h3 style="margin-bottom:8px">📑 章节列表 (${chs.length}话)</h3>
+        <div class="chapter-grid">
+          ${chs.map(ch => `
+            <div class="chapter-card ch-none">
+              <div class="name">${ch.title||'第'+ch.order+'话'}</div>
+              <div class="pct" style="color:#666">未下载</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<div class="empty">暂无章节数据</div>'}
+    `;
+  } catch(e) {
+    app.innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>';
+  }
+}
+
+(function(){
+  const id = new URLSearchParams(location.search).get('id');
+  if (id) renderDetail(decodeURIComponent(id));
+  else app.innerHTML = '<div class="empty">缺少漫画ID参数</div>';
+})();
+</script>
+</body>
+</html>

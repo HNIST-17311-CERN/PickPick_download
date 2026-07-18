@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 本地浏览</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('index.html');
+async function renderGrid() {
+  const state = _loadState('grid', { page: 1, perPage: 35, category: '' });
+  const [catData] = await Promise.all([
+    fetchJSON(`${API}/categories`)
+  ]);
+
+  let batchMode = _loadState('batch', { on: false }).on;
+  let selected = new Set(JSON.parse(sessionStorage.getItem('batchSelected') || '[]'));
+
+  const fmtSelected = (folders) => {
+    if (folders.size === 0) return '导出所选 (0)';
+    return `导出所选 (${folders.size})`;
+  };
+
+  window._gridToggleCard = (card) => {
+    const cb = card.querySelector('.batch-check');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    cb.onchange();
+  };
+
+  const render = async () => {
+    let data;
+    try {
+      data = await fetchJSON(
+        `${API}/comics?page=${state.page}&per_page=${state.perPage}&category=${encodeURIComponent(state.category)}`
+      );
+    } catch(e) {
+      app.innerHTML = `<div class="loading" style="color:#f87171">⚠ 无法连接后端服务<br><small>请确认已启动 python server.py</small></div>`;
+      return;
+    }
+    const totalPages = Math.max(1, Math.ceil(data.total / state.perPage));
+
+    app.innerHTML = `
+      <div class="toolbar">
+        <select id="catFilter">
+          <option value="">全部分类</option>
+          ${catData.categories.map(c => `<option value="${c}" ${c===state.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <select id="perPage">
+          <option value="10" ${state.perPage===10?'selected':''}>每页10部</option>
+          <option value="35" ${state.perPage===35?'selected':''}>每页35部</option>
+          <option value="60" ${state.perPage===60?'selected':''}>每页60部</option>
+          <option value="9999" ${state.perPage===9999?'selected':''}>全部</option>
+        </select>
+        <span>共 ${data.total} 部 · ${state.page}/${totalPages}</span>
+        <label style="color:#aaa;font-size:.8em;cursor:pointer;display:flex;align-items:center;gap:3px">
+          <input type="checkbox" id="chkBatch" ${batchMode?'checked':''}> 批量
+        </label>
+        ${batchMode ? `
+          <button id="btnSelAll" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px">全选</button>
+          <button id="btnSelNone" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px">全不选</button>
+          <button id="btnExport" class="btn" style="background:#2563eb;color:#fff;font-size:.8em;padding:4px 10px">${fmtSelected(selected)}</button>
+          <button id="btnBatchDel" class="btn" style="background:#991b1b;color:#f87171;font-size:.8em;padding:4px 10px">🗑 删除所选</button>
+          <label class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px;cursor:pointer">
+            导入 <input type="file" id="fileImport" accept=".zip" style="display:none">
+          </label>
+        ` : ''}
+        <button id="btnPrev" ${state.page<=1?'disabled':''}>←</button>
+        <button id="btnNext" ${state.page>=totalPages?'disabled':''}>→</button>
+      </div>
+      ${data.items.length === 0
+        ? '<div class="empty">暂无漫画，请先运行 detail_all</div>'
+        : `<div class="grid">${data.items.map(item => `
+          <div class="card" style="position:relative;cursor:pointer" onclick="${batchMode ? 'event.stopPropagation();window._gridToggleCard(this)' : `location.href='detail.html?id=${encodeURIComponent(item.folder)}'`}">
+            ${batchMode ? '<input type="checkbox" class="batch-check" data-folder="'+item.folder+'" '+(selected.has(item.folder)?'checked':'')+' onclick="event.stopPropagation()">' : ''}
+            <img src="${item.has_cover ? BASE+'/images/'+item.folder+'/cover.jpg' : ''}" alt="${item.title}" onerror="this.style.display='none'">
+            <div class="info">
+              <div class="title">${item.title}</div>
+              <div class="meta">${item.chapter_done}/${item.chapter_total}话 · ${item.author}${item.chapter_errors ? ' · <span style="color:#f87171">⚠'+item.chapter_errors+'</span>' : ''}</div>
+            </div>
+          </div>
+        `).join('')}</div>`
+      }`;
+
+    // 事件绑定
+    const catFilter = document.getElementById('catFilter');
+    const perPage = document.getElementById('perPage');
+    if (catFilter) catFilter.onchange = () => { state.category = catFilter.value; state.page = 1; _saveState('grid', state); render(); };
+    if (perPage) perPage.onchange = () => { state.perPage = +perPage.value; state.page = 1; _saveState('grid', state); render(); };
+
+    const chkBatch = document.getElementById('chkBatch');
+    if (chkBatch) chkBatch.onchange = () => {
+      batchMode = chkBatch.checked;
+      _saveState('batch', {on: batchMode});
+      if (!batchMode) { selected.clear(); sessionStorage.removeItem('batchSelected'); }
+      render();
+    };
+
+    if (batchMode) {
+      document.querySelectorAll('.batch-check').forEach(cb => {
+        cb.onchange = () => {
+          const folder = cb.dataset.folder;
+          if (cb.checked) selected.add(folder);
+          else selected.delete(folder);
+          sessionStorage.setItem('batchSelected', JSON.stringify([...selected]));
+          const btn = document.getElementById('btnExport');
+          if (btn) btn.innerHTML = fmtSelected(selected);
+        };
+      });
+      document.getElementById('btnSelAll').onclick = () => {
+        document.querySelectorAll('.batch-check').forEach(cb => { cb.checked = true; selected.add(cb.dataset.folder); });
+        sessionStorage.setItem('batchSelected', JSON.stringify([...selected]));
+        document.getElementById('btnExport').innerHTML = fmtSelected(selected);
+      };
+      document.getElementById('btnSelNone').onclick = () => {
+        document.querySelectorAll('.batch-check').forEach(cb => { cb.checked = false; selected.delete(cb.dataset.folder); });
+        sessionStorage.setItem('batchSelected', JSON.stringify([...selected]));
+        document.getElementById('btnExport').innerHTML = fmtSelected(selected);
+      };
+      document.getElementById('btnExport').onclick = async () => {
+        if (selected.size === 0) { alert('请先选择漫画'); return; }
+        const btn = document.getElementById('btnExport');
+        btn.disabled = true;
+        btn.textContent = '打包中...';
+        try {
+          const r = await fetch(`${API}/comics/export`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({folders: [...selected]})});
+          if (!r.ok) { alert('导出失败'); return; }
+          const blob = await r.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'comics_export.zip';
+          a.click(); URL.revokeObjectURL(url);
+        } catch(e) { alert('导出异常: ' + e.message); }
+        finally { btn.disabled = false; btn.innerHTML = fmtSelected(selected); }
+      };
+      document.getElementById('btnBatchDel').onclick = async () => {
+        if (selected.size === 0) { alert('请先选择漫画'); return; }
+        if (!confirm('确定删除 ' + selected.size + ' 部漫画？\n这将移除所有已下载的图片和元数据，不可恢复！')) return;
+        const btn = document.getElementById('btnBatchDel');
+        btn.disabled = true;
+        btn.textContent = '删除中...';
+        // 在当前页显示简易进度
+        let progBar = document.getElementById('batchProg');
+        if (!progBar) {
+          progBar = document.createElement('div');
+          progBar.id = 'batchProg';
+          progBar.style.cssText = 'margin:8px 0;background:#1a1a1a;border-radius:8px;padding:10px 14px;border:1px solid #2563eb44';
+          progBar.innerHTML = '<div style="color:#60a5fa;font-size:.85em;margin-bottom:6px" id="batchProgTitle"></div><div style="background:#333;border-radius:4px;height:6px;overflow:hidden"><div id="batchProgBar" style="background:#2563eb;height:100%;width:0%;border-radius:4px"></div></div><div style="color:#888;font-size:.75em;margin-top:4px" id="batchProgText"></div>';
+          document.querySelector('.toolbar').after(progBar);
+        }
+        progBar.style.display = 'block';
+        document.getElementById('batchProgTitle').textContent = '🗑 批量删除 ' + selected.size + ' 部';
+        document.getElementById('batchProgText').textContent = '0/' + selected.size;
+
+        try {
+          await fetch(API + '/comics/batch-delete', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({folders: [...selected]})
+          });
+          // 轮询进度
+          let poll = setInterval(() => {
+            fetch(API + '/download/status').then(r => r.json()).then(s => {
+              if (!s.running) {
+                clearInterval(poll);
+                progBar.style.display = 'none';
+                alert('删除完成!');
+                selected.clear();
+                sessionStorage.removeItem('batchSelected');
+                btn.disabled = false;
+                btn.textContent = '🗑 删除所选';
+                render();
+                return;
+              }
+              document.getElementById('batchProgTitle').textContent = s.progress_title || '';
+              if (s.progress_total > 0) {
+                const pct = Math.round(s.progress_done / s.progress_total * 100);
+                document.getElementById('batchProgBar').style.width = pct + '%';
+                document.getElementById('batchProgText').textContent = s.progress_done + '/' + s.progress_total + ' (' + pct + '%)';
+              }
+            }).catch(() => {});
+          }, 300);
+        } catch(e) { alert('异常: ' + e.message); btn.disabled = false; btn.textContent = '🗑 删除所选'; }
+      };
+
+      document.getElementById('fileImport').onchange = async function() {
+        const file = this.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        this.disabled = true;
+        try {
+          const r = await fetch(`${API}/comics/import`, {method:'POST', body:fd});
+          const j = await r.json();
+          if (r.ok && j.ok) { alert('导入完成: ' + (j.imported || '?') + ' 项'); render(); }
+          else { alert('导入失败: ' + (j.detail || j.error || '?')); }
+        } catch(e) { alert('导入异常: ' + e.message); }
+        finally { this.disabled = false; this.value = ''; }
+      };
+    }
+
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    if (btnPrev) btnPrev.onclick = () => { state.page--; _saveState('grid', state); render(); };
+    if (btnNext) btnNext.onclick = () => { state.page++; _saveState('grid', state); render(); };
+  };
+
+  render();
+}
+
+// ==== 收藏总览 ====
+renderGrid();
+</script>
+</body>
+</html>

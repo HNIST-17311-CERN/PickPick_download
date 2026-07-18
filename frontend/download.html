@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 下载管理</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('download.html');
+window._dlBusy = false;
+window._dlEventSource = null;
+window._dlAborted = false;
+
+// ==== SSE 带指数退避重连 ====
+let _sseRetryDelay = 1000;
+const _SSE_MAX_DELAY = 30000;
+
+function connectSSEStream(onLog, onDone) {
+  if (window._dlEventSource) {
+    window._dlEventSource.onmessage = null;
+    window._dlEventSource.onerror = null;
+    window._dlEventSource.onopen = null;
+    window._dlEventSource.close();
+    window._dlEventSource = null;
+  }
+  const es = new EventSource(API + '/download/stream');
+  window._dlEventSource = es;
+  es.onopen = () => { _sseRetryDelay = 1000; };
+  es.onmessage = (e) => {
+    _sseRetryDelay = 1000;
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'log' && onLog) onLog(msg);
+    else if (msg.type === 'done') {
+      es.close(); es.onerror = null; es.onopen = null;
+      window._dlEventSource = null;
+      window._dlBusy = false;
+      if (onDone) onDone(msg);
+    }
+  };
+  es.onerror = () => {
+    es.close();
+    es.onerror = null; es.onopen = null;
+    if (window._dlAborted) {
+      window._dlEventSource = null;
+      window._dlBusy = false;
+      return;
+    }
+    window._dlEventSource = null;
+    setTimeout(() => connectSSEStream(onLog, onDone), _sseRetryDelay);
+    _sseRetryDelay = Math.min(_sseRetryDelay * 2, _SSE_MAX_DELAY);
+  };
+}
+
+// ==== 日志辅助：自动截断防止 DOM 膨胀卡死 ====
+function appendLog(el, text) {
+  if (!el) return;
+  el.textContent += text;
+  // 超过 2000 行时保留最后 1000 行
+  const lines = el.textContent.split('\n');
+  if (lines.length > 2000) {
+    el.textContent = '...(已截断)...\n' + lines.slice(-1000).join('\n');
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+// ==== 单话下载 ====
+async function triggerSingleDl(idx) {
+  if (window._dlBusy) { alert('下载任务正在运行，请等待完成'); return; }
+  window._dlBusy = true;
+  window._dlAborted = false;
+
+  const logEl = document.getElementById('dlLog');
+  const dlStatus = document.getElementById('dlStatus');
+  const progDiv = document.getElementById('dlProgress');
+  if (progDiv) progDiv.style.display = 'block';
+  const stopTop = document.getElementById('btnStopTop'); if (stopTop) stopTop.style.display = 'inline-block';
+  document.getElementById('dlProgTitle').textContent = '正在下载 #' + idx + '...';
+  document.getElementById('dlProgBar').style.width = '0%';
+  if (dlStatus) dlStatus.textContent = '正在下载 #' + idx + '...';
+
+  await fetch(API + '/download/start', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({target:String(idx), page_concurrency: window._dlCfg?.page_concurrency||3, chapter_concurrency: window._dlCfg?.chapter_concurrency||1, comic_concurrency: window._dlCfg?.comic_concurrency||1})
+  });
+
+  connectSSEStream(
+    (msg) => {
+      appendLog(logEl, msg.text + '\n');
+      // 解析 __PROGRESS__ 更新进度条
+      if (msg.text && msg.text.startsWith('__PROGRESS__')) {
+        const parts = msg.text.split(' ');
+        if (parts.length >= 2) {
+          const dt = parts[1].split('/');
+          if (dt.length === 2) {
+            const done = parseInt(dt[0]), total = parseInt(dt[1]);
+            document.getElementById('dlProgBar').style.width = Math.round(done/total*100) + '%';
+            document.getElementById('dlProgText').textContent = done + '/' + total;
+            document.getElementById('dlProgPct').textContent = Math.round(done/total*100) + '%';
+          }
+        }
+      }
+    },
+    (msg) => {
+      appendLog(logEl, '\n===== #' + idx + ' 完成 =====\n');
+      if (dlStatus) dlStatus.textContent = '已完成';
+      if (progDiv) progDiv.style.display = 'none';
+      const st = document.getElementById('btnStopTop'); if (st) st.style.display = 'none';
+      if (msg.skips && msg.skips.length > 0) {
+        const skipArea = document.getElementById('dlSkipArea');
+        if (skipArea) {
+          let html = '<div style="margin-top:16px;background:#1a1a1a;border-radius:8px;padding:14px;border:1px solid #fbbf2433"><h4 style="color:#fbbf24;margin:0 0 10px">⚠️ 跳过列表 (' + msg.skips.length + ')</h4>';
+          msg.skips.forEach(function(s) {
+            html += '<div style="color:#ccc;font-size:.85em;padding:4px 0;border-bottom:1px solid #ffffff08"><span style="color:#fbbf24">' + s.item + '</span><span style="color:#888;margin-left:8px">— ' + s.reason + '</span></div>';
+          });
+          html += '</div>';
+          skipArea.innerHTML = html;
+        }
+      }
+    }
+  );
+}
+
+// ==== 批量下载（后端全权处理，前端只发一次请求） ====
+async function startBatchDownload(items) {
+  if (window._dlBusy) { alert('下载正在运行中'); return; }
+  window._dlBusy = true;
+  window._dlAborted = false;
+  const startTime = Date.now();
+
+  const progDiv = document.getElementById('dlProgress');
+  if (progDiv) progDiv.style.display = 'block';
+  document.getElementById('dlProgTitle').textContent = '准备下载 ' + items.length + ' 部...';
+  document.getElementById('dlProgBar').style.width = '0%';
+  document.getElementById('dlProgText').textContent = '0/' + items.length;
+  document.getElementById('dlProgPct').textContent = '0%';
+
+  const stopBtns = ['btnStopDl2', 'btnStopTop'];
+  stopBtns.forEach(id => { const b = document.getElementById(id); if (b) { b.style.display = 'inline-block'; } });
+
+  const timerEl = document.getElementById('dlStatus');
+  let timerId = setInterval(() => {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60;
+    if (timerEl) timerEl.textContent = '⏱ ' + ((h ? h + 'h ' : '') + (m ? m + 'm ' : '') + sec + 's');
+  }, 1000);
+  if (timerEl) timerEl.textContent = '⏱ 0s';
+
+  const logEl = document.getElementById('dlLog');
+
+  // 一次性发送全部 targets 给后端（先启动下载，再连 SSE）
+  const cfg = window._dlCfg || {};
+  await fetch(API + '/download/start', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      targets: items.map(i => i.idx),
+      page_concurrency: cfg.page_concurrency || 3,
+      chapter_concurrency: cfg.chapter_concurrency || 1,
+      comic_concurrency: cfg.comic_concurrency || 1
+    })
+  });
+
+  connectSSEStream(
+    (msg) => {
+      appendLog(logEl, msg.text + '\n');
+      // 解析 __PROGRESS__ 更新进度条
+      if (msg.text && msg.text.startsWith('__PROGRESS__')) {
+        const parts = msg.text.split(' ');
+        if (parts.length >= 2) {
+          const dt = parts[1].split('/');
+          if (dt.length === 2) {
+            const done = parseInt(dt[0]), total = parseInt(dt[1]);
+            document.getElementById('dlProgBar').style.width = (total > 0 ? Math.round(done/total*100) : 0) + '%';
+            document.getElementById('dlProgText').textContent = done + '/' + total;
+            document.getElementById('dlProgPct').textContent = (total > 0 ? Math.round(done/total*100) : 0) + '%';
+          }
+        }
+        document.getElementById('dlProgTitle').textContent = parts.slice(2).join(' ');
+      }
+    },
+    (msg) => {
+      clearInterval(timerId);
+      if (progDiv) progDiv.style.display = 'none';
+      const st = document.getElementById('btnStopTop'); if (st) st.style.display = 'none';
+      stopBtns.forEach(id => { const b = document.getElementById(id); if (b) b.style.display = 'none'; });
+      const totalSec = Math.floor((Date.now() - startTime) / 1000);
+      const h = Math.floor(totalSec / 3600), m = Math.floor(totalSec / 60) % 60, s = totalSec % 60;
+      const timeStr = (h ? h + 'h' : '') + (m ? m + 'm' : '') + s + 's';
+      if (timerEl) timerEl.textContent = '完成 (总耗时 ' + timeStr + ')';
+      if (Notification.permission === 'granted') {
+        new Notification('下载完成', {body: items.length + ' 部, 耗时 ' + timeStr});
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(p => {
+          if (p === 'granted') new Notification('下载完成', {body: items.length + ' 部, 耗时 ' + timeStr});
+        });
+      }
+      // 显示跳过列表
+      if (msg.skips && msg.skips.length > 0) {
+        const skipArea = document.getElementById('dlSkipArea');
+        if (skipArea) {
+          let html = '<div style="margin-top:16px;background:#1a1a1a;border-radius:8px;padding:14px;border:1px solid #fbbf2433"><h4 style="color:#fbbf24;margin:0 0 10px">⚠️ 跳过列表 (' + msg.skips.length + ')</h4>';
+          msg.skips.forEach(function(s) {
+            html += '<div style="color:#ccc;font-size:.85em;padding:4px 0;border-bottom:1px solid #ffffff08"><span style="color:#fbbf24">' + s.item + '</span><span style="color:#888;margin-left:8px">— ' + s.reason + '</span></div>';
+          });
+          html += '</div>';
+          skipArea.innerHTML = html;
+        }
+      }
+      setTimeout(() => renderDownload(), 500);
+    }
+  );
+}
+
+// ==== 下载管理 ====
+async function renderDownload() {
+  const [cfg, status, queue] = await Promise.all([
+    fetchJSON(`${API}/config`),
+    fetchJSON(`${API}/download/status`),
+    fetchJSON(`${API}/download/queue`)
+  ]);
+  window._dlCfg = cfg;
+
+  const doneTotal = queue.total === 0;
+  const queueSummary = doneTotal
+    ? '✅ 全部下载完成'
+    : `${queue.total} 部待下载 · ${queue.items.filter(i=>!i.has_detail).length} 部缺详情`;
+
+  app.innerHTML = `
+    <h2 style="margin-bottom:4px">📥 下载管理</h2>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+      <p style="color:#888;font-size:.85em;margin:0">${queueSummary}</p>
+      <button id="btnSyncFav" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px">🔄 同步收藏</button>
+      <button id="btnRefreshQue" class="btn" style="background:#333;color:#ddd;font-size:.75em;padding:4px 10px">🔍 刷新</button>
+      ${!doneTotal ? `
+        <button id="btnDlAllQue" class="btn btn-primary" style="font-size:.8em;padding:4px 14px;font-weight:600">⬇ 全部下载</button>
+        <select id="dlTopN" style="padding:4px 8px;border:1px solid #333;border-radius:6px;background:#111;color:#ddd;font-size:.75em">
+          <option value="0">前N部</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+        </select>
+        <button id="btnDlTopN" class="btn" style="background:#333;color:#60a5fa;font-size:.75em;padding:4px 10px">下载前N部</button>
+        <button id="btnDlNew" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px">⬇ 下载新增</button>
+      ` : ''}
+      <button id="btnStopTop" class="btn" style="background:#dc2626;color:#fff;font-size:.8em;padding:4px 14px;font-weight:600;display:${status.running ? '' : 'none'}" onclick="window._dlAborted=true;fetch(API+'/download/stop',{method:'POST'})">⏹ 终止下载</button>
+    </div>
+
+
+    <!-- 下载进度 -->
+    <div id="dlProgress" style="margin-bottom:24px;display:${status.running ? 'block' : 'none'}">
+      <div class="dl-card active">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3>⏳ 正在下载</h3>
+          <button id="btnStopDl2" class="btn" style="background:#dc2626;color:#fff;font-size:.85em;padding:8px 18px;font-weight:600" onclick="window._dlAborted=true;fetch(API+'/download/stop',{method:'POST'})">⏹ 终止下载</button>
+        </div>
+        <div class="dl-name" id="dlProgTitle"></div>
+        <div class="dl-bar"><div id="dlProgBar" style="width:0%"></div></div>
+        <div class="dl-stats"><span id="dlProgText">0/0</span><span id="dlProgPct" style="color:#60a5fa;font-weight:600"></span></div>
+      </div>
+    </div>
+
+    <!-- 待下载列表 -->
+    ${!doneTotal && queue.items.length > 0 ? `
+    <details open style="margin-bottom:20px">
+      <summary style="cursor:pointer;color:#aaa;font-size:.9em;margin-bottom:8px">📋 待下载列表 (${queue.total} 部)</summary>
+      <div style="max-height:300px;overflow-y:auto;background:#1a1a1a;border-radius:8px;padding:8px">
+        ${queue.items.slice(0,200).map(item => `
+          <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #ffffff06;font-size:.85em">
+            <span style="color:#888;min-width:40px">#${item.idx}</span>
+            <span style="flex:1;color:#ddd">${item.title}${item.is_new ? ' <span style="color:#fbbf24;font-size:.75em;font-weight:600">NEW</span>' : ''}</span>
+            <span style="color:#888;margin-right:8px">${item.ch_done}/${item.ch_total}话</span>
+            ${item.has_detail
+              ? '<span style="color:#4ade80;font-size:.75em">已解析</span>'
+              : '<span style="color:#fbbf24;font-size:.75em">缺详情</span>'}
+            ${item.folder
+              ? `<a href="/#/detail/${encodeURIComponent(item.folder)}" target="_blank" style="color:#60a5fa;margin-left:8px;font-size:.75em">浏览</a>`
+              : ''}
+            <button onclick="triggerSingleDl(${item.idx})" style="margin-left:6px;padding:2px 8px;font-size:.7em;border:1px solid #444;border-radius:4px;background:transparent;color:#aaa;cursor:pointer">⬇下载</button>
+          </div>
+        `).join('')}
+        ${queue.items.length > 200 ? `<div style="color:#888;padding:8px;font-size:.8em">...还有 ${queue.items.length-200} 部</div>` : ''}
+      </div>
+    </details>
+    ` : ''}
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <span style="color:#888;font-size:.85em">实时输出</span>
+      <span id="dlStatus" style="color:#666;font-size:.8em">${status.running ? '正在运行...' : '就绪'}</span>
+      <button id="btnClearLog" style="margin-left:auto;padding:4px 10px;font-size:.75em;border:1px solid #333;border-radius:4px;background:transparent;color:#888;cursor:pointer">清屏</button>
+    </div>
+    <div id="dlLog" style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:14px;height:350px;overflow-y:auto;font-family:Consolas,monospace;font-size:.8em;color:#aaa;line-height:1.6;white-space:pre-wrap"></div>
+    <div id="dlSkipArea"></div>
+  `;
+
+  // ==== 批量下载按钮 ====
+  const btnAll = document.getElementById('btnDlAllQue');
+  if (btnAll) btnAll.onclick = async () => {
+    if (!confirm('确定全部下载 ' + queue.total + ' 部漫画？')) return;
+    btnAll.disabled = true; btnAll.textContent = '下载中...';
+    await startBatchDownload([...queue.items]);
+  };
+
+  const btnTopN = document.getElementById('btnDlTopN');
+  if (btnTopN) btnTopN.onclick = async () => {
+    const n = +document.getElementById('dlTopN').value;
+    if (!n) { alert('请选择数量'); return; }
+    btnTopN.disabled = true; btnTopN.textContent = '下载中...';
+    await startBatchDownload(queue.items.slice(0, n));
+  };
+
+  const btnNew = document.getElementById('btnDlNew');
+  if (btnNew) btnNew.onclick = async () => {
+    const newItems = queue.items.filter(i => i.is_new);
+    if (!newItems.length) { alert('没有新增漫画'); return; }
+    if (!confirm('下载 ' + newItems.length + ' 部新增漫画？')) return;
+    btnNew.disabled = true; btnNew.textContent = '下载中...';
+    await startBatchDownload(newItems);
+  };
+
+  // 同步收藏
+  document.getElementById('btnSyncFav').onclick = async () => {
+    const btn = document.getElementById('btnSyncFav');
+    btn.disabled = true; btn.textContent = '同步中...';
+    try { await fetch(API + '/favorites/refresh', {method:'POST'}); } catch(e) { alert('同步失败: ' + e.message); }
+    renderDownload();
+  };
+
+  // 快速本地扫描
+  document.getElementById('btnRefreshQue').onclick = async () => {
+    const btn = document.getElementById('btnRefreshQue');
+    btn.disabled = true;
+    btn.textContent = '刷新中...';
+    try { await fetch(API + '/download/check', {method:'POST'}); } catch(e) {}
+    renderDownload();
+  };
+
+  if (status.running) {
+    reconnectRunningDownload();
+    pollProgress();
+  }
+
+  // 清屏
+  document.getElementById('btnClearLog').onclick = () => {
+    document.getElementById('dlLog').textContent = '';
+  };
+
+  // 进度条轮询
+  function pollProgress() {
+    const update = () => {
+      fetch(API + '/download/status').then(r => r.json()).then(s => {
+        if (!s.running) {
+          if (!window._dlBusy) {
+            document.getElementById('dlProgress').style.display = 'none';
+            ['btnStopDl2', 'btnStopTop'].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = 'none'; });
+          }
+          return;
+        }
+        document.getElementById('dlProgress').style.display = 'block';
+        ['btnStopDl2', 'btnStopTop'].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = 'inline-block'; });
+        if (s.progress_total > 0) {
+          const pct = Math.round(s.progress_done / s.progress_total * 100);
+          document.getElementById('dlProgBar').style.width = pct + '%';
+          document.getElementById('dlProgText').textContent = s.progress_done + '/' + s.progress_total;
+          document.getElementById('dlProgPct').textContent = pct + '%';
+        }
+        document.getElementById('dlProgTitle').textContent = s.progress_title || '';
+        if (s.running) setTimeout(update, 1000);
+      }).catch(() => setTimeout(update, 2000));
+    };
+    update();
+  }
+
+  // 页面加载时重连正在运行的下载
+  function reconnectRunningDownload() {
+    window._dlBusy = true;
+    window._dlAborted = false;
+    const logEl = document.getElementById('dlLog');
+    connectSSEStream(
+      (msg) => {
+        appendLog(logEl, msg.text + '\n');
+        if (msg.text && msg.text.startsWith('__PROGRESS__')) {
+          const parts = msg.text.split(' ');
+          if (parts.length >= 2) {
+            const dt = parts[1].split('/');
+            if (dt.length === 2) {
+              const done = parseInt(dt[0]), total = parseInt(dt[1]);
+              document.getElementById('dlProgBar').style.width = (total > 0 ? Math.round(done/total*100) : 0) + '%';
+              document.getElementById('dlProgText').textContent = done + '/' + total;
+              document.getElementById('dlProgPct').textContent = (total > 0 ? Math.round(done/total*100) : 0) + '%';
+            }
+          }
+          document.getElementById('dlProgTitle').textContent = parts.slice(2).join(' ');
+        }
+      },
+      (msg) => {
+        appendLog(logEl, '\n===== 完成 =====\n');
+      }
+    );
+  }
+}
+
+// ==== 启动 ====
+renderDownload();
+</script>
+</body>
+</html>

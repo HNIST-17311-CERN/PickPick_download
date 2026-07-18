@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude AI
+.claude/
+
+# Sensitive config (contains real token/nonce)
+config.yaml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime data — user content, not code
+comics_detail/
+covers/
+downloads/
+
+# Cache and local databases
+comics_metadata.json
+comics_last_seen.json
+download_progress.json
+pica.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Browser dump files (contain personal data)
+network_*.json
+pageData_*.json
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Archives (exported ZIPs)
+*.zip
+*.7z
+*.rar
+*.tar.gz
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 收藏</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('favorites.html');
+async function renderFavorites() {
+  const state = _loadState('fav', { page: 1, perPage: 35, category: '', status: '' });
+  const data = await fetchJSON(
+    `${API}/favorites?page=${state.page}&per_page=${state.perPage}&category=${encodeURIComponent(state.category)}&status=${state.status}`
+  );
+  const totalPages = Math.max(1, Math.ceil(data.total / state.perPage));
+  const statusLabel = {downloaded:'已下载', partial:'部分', none:'未下载'};
+  const statusClr = {downloaded:'#4ade80', partial:'#fbbf24', none:'#666'};
+
+  const render = () => {
+    app.innerHTML = `
+      <div class="toolbar">
+        <select id="catFilter">
+          <option value="">全部分类</option>
+          ${(data.categories||[]).map(c => `<option value="${c}" ${c===state.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <select id="statusFilter">
+          <option value="">全部状态</option>
+          <option value="downloaded" ${state.status==='downloaded'?'selected':''}>已全部下载</option>
+          <option value="partial" ${state.status==='partial'?'selected':''}>部分下载</option>
+          <option value="none" ${state.status==='none'?'selected':''}>未下载</option>
+        </select>
+        <select id="perPage">
+          <option value="20" ${state.perPage===20?'selected':''}>每页20部</option>
+          <option value="35" ${state.perPage===35?'selected':''}>每页35部</option>
+          <option value="60" ${state.perPage===60?'selected':''}>每页60部</option>
+        </select>
+        <span>共 ${data.total} 部${data.new_count ? ' · <span style="color:#fbbf24">NEW +'+data.new_count+'</span>' : ''} · ${state.page}/${totalPages}</span>
+        <button id="btnRefreshFav" class="btn" style="background:#333;color:#60a5fa;font-size:.8em;padding:4px 10px">🔄 同步收藏</button>
+        ${data.new_count ? '<button id="btnMarkSeen" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:4px 10px">标记已查看</button>' : ''}
+      </div>
+      ${data.items.length === 0
+        ? '<div class="empty">暂无匹配的漫画</div>'
+        : `<div class="grid">${data.items.map(item => `
+          <div class="card" onclick="location.href='detail-api.html?id=${encodeURIComponent(item.folder||'_id-'+item._id)}'" style="cursor:pointer">
+            <div style="position:relative">
+              ${item.cover_url ? `<img src="${resolveUrl(item.cover_url)}" alt="${item.title}" onerror="this.style.display='none'">` : '<div style="width:100%;aspect-ratio:3/4;background:#111;display:flex;align-items:center;justify-content:center;color:#555;font-size:.8em">无封面</div>'}
+              <span style="position:absolute;top:6px;right:6px;background:${statusClr[item.dl_status]};color:#000;font-size:.7em;padding:2px 8px;border-radius:4px;font-weight:700">${statusLabel[item.dl_status]}</span>
+              ${item.is_new ? '<span style="position:absolute;top:6px;left:6px;background:#fbbf24;color:#000;font-size:.7em;padding:2px 8px;border-radius:4px;font-weight:700">NEW</span>' : ''}
+            </div>
+            <div class="info">
+              <div class="title">${item.title}</div>
+              <div class="meta">${item.epsCount||0}话 · ${item.author||''}${item.dl_status==='partial' ? ` · ${item.chapter_done}/${item.chapter_total}话已下` : ''}${item.chapter_errors ? ' · <span style="color:#f87171">⚠'+item.chapter_errors+'</span>' : ''}</div>
+            </div>
+          </div>
+        `).join('')}</div>
+        <div class="pager">
+          <button id="btnPrev" ${state.page<=1?'disabled':''}>←</button>
+          <span>${state.page}/${totalPages}</span>
+          <button id="btnNext" ${state.page>=totalPages?'disabled':''}>→</button>
+        </div>`}
+      `;
+
+    const catFilter = document.getElementById('catFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const perPage = document.getElementById('perPage');
+    if (catFilter) catFilter.onchange = () => { state.category = catFilter.value; state.page = 1; _saveState('fav', state); _reload(); };
+    if (statusFilter) statusFilter.onchange = () => { state.status = statusFilter.value; state.page = 1; _saveState('fav', state); _reload(); };
+    if (perPage) perPage.onchange = () => { state.perPage = +perPage.value; state.page = 1; _saveState('fav', state); _reload(); };
+    const btnMarkSeen = document.getElementById('btnMarkSeen');
+    const btnRefreshFav = document.getElementById('btnRefreshFav');
+    if (btnRefreshFav) btnRefreshFav.onclick = async () => {
+      btnRefreshFav.disabled = true;
+      btnRefreshFav.textContent = '同步中...';
+      try {
+        const r = await fetch(API + '/favorites/refresh', {method:'POST'});
+        const j = await r.json();
+        if (j.ok) {
+          alert('同步完成: ' + j.total + ' 部' + (j.new_count ? ', 新增 ' + j.new_count + ' 部' : ''));
+        } else {
+          alert('同步失败: ' + (j.detail || j.error || '?'));
+        }
+      } catch(e) {
+        alert('请求失败: ' + e.message);
+      }
+      _reload();
+    };
+
+    if (btnMarkSeen) btnMarkSeen.onclick = async () => {
+      btnMarkSeen.disabled = true;
+      await fetch(API + '/mark-seen', {method:'POST'});
+      _reload();
+    };
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    if (btnPrev) btnPrev.onclick = () => { state.page--; _saveState('fav', state); _reload(); };
+    if (btnNext) btnNext.onclick = () => { state.page++; _saveState('fav', state); _reload(); };
+  };
+
+  async function _reload() {
+    const d = await fetchJSON(
+      `${API}/favorites?page=${state.page}&per_page=${state.perPage}&category=${encodeURIComponent(state.category)}&status=${state.status}`
+    );
+    // update data in place for render
+    Object.assign(data, d);
+    render();
+  }
+
+  render();
+}
+
+// ==== 详情页 ====
+renderFavorites();</script>
+</body>
+</html>

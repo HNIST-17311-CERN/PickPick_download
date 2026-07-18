@@ -1,0 +1,12 @@
+api_base: "https://picaapi.go2778.com"
+token: ""
+nonce: ""
+page_concurrency: 3
+chapter_concurrency: 1
+comic_concurrency: 1
+request_delay: 1.5
+max_retries: 30
+proxy: ""
+image_proxy_domain: "go2778.com"
+download_dir: "downloads"
+cover_dir: "covers"
