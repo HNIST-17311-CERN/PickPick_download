@@ -82,16 +82,65 @@ function escapeHTML(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ==== 阅读器入口：在点击手势内先全屏再跳转（全屏状态跨同源导航保持） ====
+// ==== 阅读器入口：在当前页全屏 + iframe 浮层，避免跨页导航丢失全屏手势 ====
 function goReader(url) {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
-      .then(() => { location.href = url; })
-      .catch(() => { location.href = url; });
-  } else {
-    location.href = url;
+  // 如果已经在阅读器 iframe 中，通知父窗口更新 src
+  if (window.parent !== window && window.parent._updateReaderFrame) {
+    window.parent._updateReaderFrame(url);
+    return;
   }
+  // 如果已有浮层（说明已在阅读模式），直接更新 iframe src
+  const existingFrame = document.getElementById('readerFrame');
+  if (existingFrame) {
+    existingFrame.src = url;
+    return;
+  }
+  // 首次进入：全屏 → 浮层
+  document.documentElement.requestFullscreen()
+    .then(() => { _showReaderOverlay(url); })
+    .catch(() => { location.href = url; });
 }
+
+function _showReaderOverlay(url) {
+  history.pushState({ readerOverlay: true }, '', url);
+  const overlay = document.createElement('div');
+  overlay.id = 'readerOverlay';
+  overlay.innerHTML = '<iframe id="readerFrame" style="width:100%;height:100%;border:none" allowfullscreen allow="fullscreen"></iframe>';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:#1a1a2e';
+  document.body.appendChild(overlay);
+  document.getElementById('readerFrame').src = url;
+}
+
+// 父窗口暴露给 iframe 内更新地址的方法
+window._updateReaderFrame = function(url) {
+  const frame = document.getElementById('readerFrame');
+  if (frame) {
+    frame.src = url;
+    history.replaceState({ readerOverlay: true }, '', url);
+  }
+};
+
+// 退出全屏时清理浮层
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    const overlay = document.getElementById('readerOverlay');
+    if (overlay) {
+      overlay.remove();
+      if (history.state && history.state.readerOverlay) history.back();
+    }
+  }
+});
+
+// 浏览器后退时清理
+window.addEventListener('popstate', (e) => {
+  if (!e.state || !e.state.readerOverlay) {
+    const overlay = document.getElementById('readerOverlay');
+    if (overlay) {
+      overlay.remove();
+      if (document.fullscreenElement) document.exitFullscreen();
+    }
+  }
+});
 
 // ==== 模糊模式 ====
 if (_loadState('blur', {on: false}).on) {

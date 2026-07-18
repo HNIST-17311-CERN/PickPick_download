@@ -19,6 +19,22 @@
     transition: transform .2s, opacity .2s;
   }
   #btnBackTop:hover { transform: scale(1.1); }
+
+  /* ==== 专注模式 ==== */
+  body.focus-mode .topbar { display: none !important; }
+  body.focus-mode .btn-back { display: none !important; }
+  body.focus-mode .reader-toolbar > * { display: none !important; }
+  body.focus-mode .reader-toolbar > #btnNextCh,
+  body.focus-mode .reader-toolbar > #btnPrevCh,
+  body.focus-mode .reader-toolbar > #btnFocus { display: inline-block !important; }
+  body.focus-mode .reader-toolbar > #btnNextCh,
+  body.focus-mode .reader-toolbar > #btnPrevCh { background: transparent; border-color: transparent; color: #666; }
+  #btnFocus.on { background: transparent; border-color: transparent; color: #666; }
+  body.focus-mode #btnBackTop { display: none !important; }
+  body.focus-mode .container { padding: 0 8px !important; }
+  .focus-mode, .focus-mode * { scrollbar-width: none; -ms-overflow-style: none; }
+  .focus-mode::-webkit-scrollbar,
+  .focus-mode *::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -37,7 +53,7 @@
 
 <button id="btnBackTop" title="回到顶部">⬆</button>
 
-<script src="js/common.js?v=6"></script>
+<script src="js/common.js?v=9"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -52,6 +68,7 @@ async function renderReader(folder, order) {
   const qs = new URLSearchParams(location.search);
   const mode = qs.get('mode') || 'scroll';
   const zoom = parseInt(qs.get('zoom')) || 33;
+  const focus = qs.get('focus') === '1';
 
   const chOptions = chs.map(c =>
     `<option value="${c.order}" ${c.order===order?'selected':''}>第${String(c.order).padStart(2,'0')}话 - ${c.title||''}</option>`
@@ -60,14 +77,15 @@ async function renderReader(folder, order) {
   const chIdx = chs.findIndex(c => c.order === order);
 
   app.innerHTML = `
-    <button class="btn-back" onclick="location.replace('detail.html?id=${encodeURIComponent(folder)}')">← 返回详情</button>
+    <button class="btn-back" onclick="window.parent!==window?window.parent.document.exitFullscreen():location.replace('detail.html?id=${encodeURIComponent(folder)}')">← 返回详情</button>
     <div class="reader-toolbar">
       <select id="chSelect">${chOptions}</select>
       <span style="color:#888;font-size:.85em">${images.length} 张</span>
-      <button id="btnPrevCh" ${chIdx<=0?'disabled':''}>⬅ 上一章</button>
-      <button id="btnNextCh" ${chIdx>=chs.length-1?'disabled':''}>下一章 ➡</button>
+      <button id="btnPrevCh" ${chIdx<=0?'disabled':''}>⬅ 上一话</button>
+      <button id="btnNextCh" ${chIdx>=chs.length-1?'disabled':''}>下一话 ➡</button>
       <span class="spacer"></span>
       <button id="btnFS" title="全屏">⛶</button>
+      <button id="btnFocus">专注 F</button>
       <div class="zoom-bar">
         <button id="z33" class="${zoom===33?'on':''}">33%</button>
         <button id="z50" class="${zoom===50?'on':''}">50%</button>
@@ -87,7 +105,7 @@ async function renderReader(folder, order) {
 
   const readerArea = document.getElementById('readerArea');
   const sizeCss = zoom === 100 ? 'width:100%' : `width:${zoom}%`;
-  const buildUrl = (o, m, z) => `reader.html?folder=${encodeURIComponent(folder)}&order=${o}&mode=${m}&zoom=${z}`;
+  const buildUrl = (o, m, z) => `reader.html?folder=${encodeURIComponent(folder)}&order=${o}&mode=${m}&zoom=${z}${focus?'&focus=1':''}`;
 
   function renderScroll() {
     const hasNext = chIdx < chs.length - 1;
@@ -120,7 +138,7 @@ async function renderReader(folder, order) {
           <div class="page-jump">
             跳转到 <input type="number" id="jumpInput" value="${page+1}" min="1" max="${images.length}"> / ${images.length} 页
           </div>
-          <div class="kbd-hint">← → 键盘翻页</div>
+          <div class="kbd-hint">← → 翻页　↑ ↓ 切换话</div>
         </div>`;
       document.getElementById('btnFL').onclick = () => { page--; show(); };
       document.getElementById('btnFR').onclick = () => { page++; show(); };
@@ -134,17 +152,66 @@ async function renderReader(folder, order) {
   if (mode === 'flip') renderFlip(); else renderScroll();
 
   // ==== 全屏 ====
+  const inFrame = window.parent !== window;
   function enterFS() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    if (inFrame) {
+      window.parent.document.documentElement.requestFullscreen().catch(()=>{});
+    } else if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
   }
   function exitFS() {
-    if (document.fullscreenElement) document.exitFullscreen();
+    if (inFrame) {
+      window.parent.document.exitFullscreen();
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
   }
   document.getElementById('btnFS').onclick = () => {
-    document.fullscreenElement ? exitFS() : enterFS();
+    if (inFrame) {
+      // 在 iframe 中：检查父窗口全屏状态
+      window.parent.document.fullscreenElement ? exitFS() : enterFS();
+    } else {
+      document.fullscreenElement ? exitFS() : enterFS();
+    }
   };
-  // 兜底：手动退出全屏后，首次按键重新进入
-  document.addEventListener('keydown', () => { if (!document.fullscreenElement) enterFS(); }, { once: true });
+
+  // ==== 专注模式 ====
+  function applyFocus(on) {
+    document.documentElement.classList.toggle('focus-mode', on);
+    document.body.classList.toggle('focus-mode', on);
+    const btn = document.getElementById('btnFocus');
+    if (btn) btn.classList.toggle('on', on);
+  }
+  applyFocus(focus);
+  function toggleFocus() {
+    const next = !document.body.classList.contains('focus-mode');
+    applyFocus(next);
+    const url = new URL(location.href);
+    if (next) url.searchParams.set('focus', '1'); else url.searchParams.delete('focus');
+    history.replaceState(null, '', url);
+  }
+  document.getElementById('btnFocus').onclick = toggleFocus;
+  // F 键切换专注模式 + 方向键导航
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'f' || e.key === 'F') {
+      toggleFocus();
+      return;
+    }
+    // 翻页模式：← → 翻页，↑ ↓ 切换话
+    if (mode === 'flip') {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); window._flip && window._flip(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); window._flip && window._flip(1); }
+      else if (e.key === 'ArrowUp' && chIdx > 0) goReader(buildUrl(chs[chIdx-1].order, mode, zoom));
+      else if (e.key === 'ArrowDown' && chIdx < chs.length - 1) goReader(buildUrl(chs[chIdx+1].order, mode, zoom));
+    }
+    // 滚动模式：← → 切换话
+    if (mode === 'scroll') {
+      if (e.key === 'ArrowLeft' && chIdx > 0) goReader(buildUrl(chs[chIdx-1].order, mode, zoom));
+      else if (e.key === 'ArrowRight' && chIdx < chs.length - 1) goReader(buildUrl(chs[chIdx+1].order, mode, zoom));
+    }
+  });
 
   // ==== 回到顶部按钮 ====
   const btnTop = document.getElementById('btnBackTop');
@@ -198,8 +265,23 @@ async function renderReader(folder, order) {
 }
 
 (function(){
-  // 自动全屏 — 在同步上下文尝试（部分浏览器会在导航后保留短暂手势窗口）
-  try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e) {}
+  // 自动全屏 — 仅直接打开 reader.html 时需要（从详情页进入走 goReader iframe 方案）
+  function tryFS() {
+    if (!document.fullscreenElement && window.parent === window) {
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  }
+  // 同步尝试（部分浏览器导航后保留手势令牌）
+  tryFS();
+  // 兜底：首次点击或按键
+  if (!document.fullscreenElement) {
+    function fallback(e) {
+      if (e.target.id === 'btnFS' || (e.target.closest && e.target.closest('#btnFS'))) return;
+      tryFS();
+    }
+    document.addEventListener('click', fallback, { once: true });
+    document.addEventListener('keydown', fallback, { once: true });
+  }
 
   const params = new URLSearchParams(location.search);
   const folder = params.get('folder') || '';

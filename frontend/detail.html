@@ -20,7 +20,7 @@
   <div class="loading">加载中...</div>
 </div>
 
-<script src="js/common.js?v=6"></script>
+<script src="js/common.js?v=8"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -43,7 +43,7 @@ async function renderDetail(folder) {
         ${m.categories ? `<p>分类: ${m.categories.map(c => '<a href="search.html?keyword='+encodeURIComponent(c)+'" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+c+'</a>').join(', ')}</p>` : ''}
         ${m.tags ? `<p>标签: ${m.tags.slice(0,15).map(t => '<a href="search.html?keyword='+encodeURIComponent(t)+'" style="color:#94a3b8;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t+'</a>').join(', ')}</p>` : ''}
         <div style="display:flex;gap:8px;margin-top:8px">
-          ${chs.length > 0 ? `<button class="btn btn-primary" onclick="location.replace('reader.html?folder=${encodeURIComponent(folder)}&order=${firstCh}')">▶ 开始阅读</button>` : ''}
+          ${chs.length > 0 ? `<button class="btn btn-primary" onclick="goReader('reader.html?folder=${encodeURIComponent(folder)}&order=${firstCh}')">▶ 开始阅读</button>` : ''}
           <button id="btnDelete" class="btn" style="background:#333;color:#f87171">🗑 删除</button>
         </div>
       </div>
@@ -59,7 +59,7 @@ async function renderDetail(folder) {
           const showStatus = _loadState('chStatus', {on: true}).on;
           const cls = !showStatus ? '' : ch.error ? 'has-err' : total && done >= total ? 'ch-done' : done > 0 ? 'ch-partial' : 'ch-none';
           return `
-          <div class="chapter-card ${cls}" onclick="location.replace('reader.html?folder=${encodeURIComponent(folder)}&order=${ch.order}')">
+          <div class="chapter-card ${cls}" onclick="goReader('reader.html?folder=${encodeURIComponent(folder)}&order=${ch.order}')">
             <div class="name">${ch.title||'第'+ch.order+'话'}</div>
             ${total ? `<div class="bar"><div style="width:${pct}%"></div></div><div class="pct">${done}/${total}P</div>` : '<div class="pct" style="color:#555">暂无数据</div>'}
             ${ch.error ? `<div class="err">⚠ ${ch.error}</div>` : ''}
