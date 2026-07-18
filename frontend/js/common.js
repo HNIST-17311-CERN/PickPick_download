@@ -52,17 +52,34 @@ async function updateTokenStatus() {
 
 function renderTopbar(active) {
   const pages = [
-    { label: '📚 收藏', href: 'favorites.html' },
-    { label: '📋 本地浏览', href: 'index.html' },
-    { label: '📥 下载管理', href: 'download.html' },
-    { label: '⚙️ 设置', href: 'settings.html' },
+    { label: '\u{1F4DA} \u6536\u85CF', href: 'favorites.html' },
+    { label: '\u{1F4CB} \u672C\u5730\u6D4F\u89C8', href: 'index.html' },
+    { label: '\u{1F4E5} \u4E0B\u8F7D\u7BA1\u7406', href: 'download.html' },
+    { label: '\u{1F50D} \u641C\u7D22', href: 'search.html' },
+    { label: '\u2699\uFE0F \u8BBE\u7F6E', href: 'settings.html' },
   ];
   const nav = document.getElementById('topnav');
   if (!nav) return;
   nav.innerHTML = pages.map(p =>
     `<a href="${p.href}" class="${active === p.href ? 'active' : ''}">${p.label}</a>`
   ).join('');
+
+  const searchWrap = document.getElementById('searchWrap');
+  if (searchWrap) {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('keyword') || '';
+    searchWrap.innerHTML = `
+      <div class="search-box">
+        <input type="text" class="header-search" placeholder="搜索漫画..." value="${escapeHTML(q)}"
+          onkeydown="if(event.key==='Enter'){const kw=this.value.trim();if(kw)location.href='search.html?keyword='+encodeURIComponent(kw)}">
+      </div>`;
+  }
+
   updateTokenStatus();
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ==== 阅读器入口：在点击手势内先全屏再跳转（全屏状态跨同源导航保持） ====

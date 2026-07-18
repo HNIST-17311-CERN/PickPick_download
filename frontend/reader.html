@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>哔咔漫画 - 阅读器</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
@@ -24,7 +27,8 @@
   <h1>📚 哔咔漫画</h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
-  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
 </div>
 
 <div class="container" id="app">
@@ -33,7 +37,7 @@
 
 <button id="btnBackTop" title="回到顶部">⬆</button>
 
-<script src="js/common.js"></script>
+<script src="js/common.js?v=6"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -56,7 +60,7 @@ async function renderReader(folder, order) {
   const chIdx = chs.findIndex(c => c.order === order);
 
   app.innerHTML = `
-    <button class="btn-back" onclick="location.href='detail.html?id=${encodeURIComponent(folder)}'">← 返回详情</button>
+    <button class="btn-back" onclick="location.replace('detail.html?id=${encodeURIComponent(folder)}')">← 返回详情</button>
     <div class="reader-toolbar">
       <select id="chSelect">${chOptions}</select>
       <span style="color:#888;font-size:.85em">${images.length} 张</span>

@@ -16,8 +16,9 @@ class LocalComicRepo:
             where.append("categories LIKE ?")
             params.append(f'%"{category}"%')
         if search:
-            where.append("(title LIKE ? OR author LIKE ?)")
-            params.extend([f"%{search}%", f"%{search}%"])
+            where.append("(title LIKE ? OR author LIKE ? OR categories LIKE ? OR tags LIKE ? OR description LIKE ?)")
+            s = f"%{search}%"
+            params.extend([s, s, s, s, s])
         where_clause = f"WHERE {' AND '.join(where)}" if where else ""
         offset = (page - 1) * per_page
 

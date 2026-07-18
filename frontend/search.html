@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 搜索</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
+</div>
+
+<div class="container" style="padding-bottom:0">
+  <div class="search-hero" id="searchBar">
+    <input type="text" class="hero-search" id="heroInput" placeholder="输入关键词搜索..." autofocus oninput="window._searchInput(this.value)">
+  </div>
+</div>
+
+<div class="container" id="app" style="padding-top:0">
+</div>
+
+<script src="js/common.js?v=5"></script>
+<script>
+(function(){
+const app = document.getElementById('app');
+const heroInput = document.getElementById('heroInput');
+const params = new URLSearchParams(location.search);
+let keyword = params.get('keyword') || '';
+let page = parseInt(params.get('page')) || 1;
+let perPage = 20;
+let total = 0;
+let debounceTimer;
+let showSources = { favorite: true, local: true };
+const SOURCE_LABELS = { favorite: '收藏', downloaded: '下载', local: '导入' };
+const SOURCE_COLORS = { favorite: '#f59e0b', downloaded: '#4ade80', local: '#60a5fa' };
+
+if (keyword) {
+  heroInput.value = keyword;
+}
+
+function highlight(text, kw) {
+  if (!kw) return text;
+  const div = document.createElement('div');
+  div.textContent = text;
+  const html = div.innerHTML;
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return html.replace(new RegExp('(' + esc + ')', 'gi'), '<em class="hl">$1</em>');
+}
+
+function updateUrl() {
+  const u = new URL(location);
+  u.searchParams.set('keyword', keyword);
+  u.searchParams.set('page', page);
+  history.replaceState({}, '', u);
+}
+
+async function doSearch() {
+  updateUrl();
+  app.innerHTML = '<div class="loading">搜索中...</div>';
+  try {
+    const data = await fetchJSON(API + '/search?keyword=' + encodeURIComponent(keyword) + '&page=' + page + '&per_page=' + perPage);
+    total = data.total;
+    renderResults(data);
+  } catch(e) {
+    app.innerHTML = '<div class="loading" style="color:#f87171">搜索失败: ' + e.message + '</div>';
+  }
+}
+
+function renderResults(data) {
+  var totalPages = Math.max(1, Math.ceil(data.total / perPage));
+  var html = '';
+
+  if (data.results.length === 0) {
+    app.innerHTML = '<div class="empty">' + (keyword ? '没有找到匹配的漫画' : '输入关键词开始搜索') + '</div>';
+    return;
+  }
+
+  html = '<div class="search-meta">找到 ' + data.total + ' 部漫画' +
+    ' <span style="margin-left:12px;font-size:.85em">' +
+    '<label class="src-filter-label"><input type="checkbox" class="src-filter" data-src="favorite"' + (showSources.favorite ? ' checked' : '') + ' onchange="window._toggleSource()"> 收藏</label>' +
+    '<label class="src-filter-label"><input type="checkbox" class="src-filter" data-src="local"' + (showSources.local ? ' checked' : '') + ' onchange="window._toggleSource()"> 本地</label>' +
+    '</span></div>' +
+    '<div class="grid search-grid">';
+
+  data.results.forEach(function(r) {
+    var srcLabel = SOURCE_LABELS[r.source] || r.source;
+    var srcColor = SOURCE_COLORS[r.source] || '#888';
+    var href = '#';
+    if (r.source === 'downloaded' && r.folder) {
+      href = 'detail.html?id=' + encodeURIComponent(r.folder);
+    } else if (r.source === 'favorite' && r.idx) {
+      href = 'detail-api.html?id=' + encodeURIComponent('idx_' + r.idx);
+    } else if (r.source === 'local' && r.local_id) {
+      href = 'detail.html?id=' + encodeURIComponent('local/' + r.local_id);
+    }
+    var cover = r.cover ? resolveUrl(r.cover) : '';
+    var hasCover = !!r.cover;
+    var eps = r.chapter_done > 0 ? r.chapter_done + '/' + r.epsCount + '话' : (r.epsCount || r.chapter_total || 0) + '话';
+
+    html += '<div class="card src-' + r.source + '" onclick="location.href=\'' + href + '\'" style="cursor:pointer">' +
+      '<div style="position:relative">' +
+      (hasCover ? '<img src="' + cover + '" onerror="this.style.display=\'none\'" loading="lazy">' : '<div style="aspect-ratio:3/4;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:2em">?</div>') +
+      '<span class="search-badge" style="background:' + srcColor + '">' + srcLabel + '</span>' +
+      '</div>' +
+      '<div class="info">' +
+      '<div class="title">' + highlight(r.title, keyword) + '</div>' +
+      '<div class="meta">' + highlight(r.author || '未知', keyword) + ' · ' + eps + '</div>' +
+      (r.categories && r.categories.length > 0 ? '<div class="meta" style="color:#60a5fa">' + r.categories.slice(0, 3).join(' · ') + '</div>' : '') +
+      '</div>' +
+      '</div>';
+  });
+
+  html += '</div>';
+
+  if (totalPages > 1) {
+    html += '<div class="pager">' +
+      '<button onclick="window._goPage(' + (page - 1) + ')"' + (page <= 1 ? ' disabled' : '') + '>上一页</button>' +
+      '<span>' + page + ' / ' + totalPages + '</span>' +
+      '<button onclick="window._goPage(' + (page + 1) + ')"' + (page >= totalPages ? ' disabled' : '') + '>下一页</button>' +
+      '</div>';
+  }
+
+  app.innerHTML = html;
+}
+
+window._searchInput = function(val) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(function() {
+    var trimmed = val.trim();
+    if (trimmed !== keyword) {
+      keyword = trimmed;
+      page = 1;
+      if (keyword) {
+        doSearch();
+      } else {
+        app.innerHTML = '<div style="text-align:center;color:#555;padding:40px 0">输入关键词搜索已下载、收藏和本地导入的漫画</div>';
+      }
+    }
+  }, 300);
+};
+
+window._goPage = function(p) {
+  page = Math.max(1, Math.min(p, Math.ceil(total / perPage)));
+  doSearch();
+  window.scrollTo(0, 0);
+};
+
+window._toggleSource = function() {
+  showSources.favorite = document.querySelector('.src-filter[data-src="favorite"]').checked;
+  showSources.local = document.querySelector('.src-filter[data-src="local"]').checked;
+  var cards = document.querySelectorAll('.card[class*="src-"]');
+  cards.forEach(function(c) {
+    var src = c.className.match(/src-(\w+)/);
+    if (!src) return;
+    var s = src[1];
+    if (s === 'favorite' && showSources.favorite) c.style.display = '';
+    else if ((s === 'downloaded' || s === 'local') && showSources.local) c.style.display = '';
+    else c.style.display = 'none';
+  });
+};
+
+renderTopbar('search.html');
+if (keyword) {
+  doSearch();
+}
+})();
+</script>
+
+</body>
+</html>

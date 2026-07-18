@@ -12,14 +12,15 @@
   <h1>📚 哔咔漫画</h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
-  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
 </div>
 
 <div class="container" id="app">
   <div class="loading">加载中...</div>
 </div>
 
-<script src="js/common.js"></script>
+<script src="js/common.js?v=4"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -37,10 +38,13 @@ async function renderDetail(comicId) {
         ${cover ? `<img src="${resolveUrl(cover)}" alt="">` : ''}
         <div class="meta">
           <h2>${m.title || '?'}</h2>
-          <p>作者: ${m.author||'?'} | ${m.chineseTeam ? '汉化: '+m.chineseTeam+' | ' : ''}${m.status||'?'}</p>
+          <p>作者: <a href="search.html?keyword=${encodeURIComponent(m.author||'')}" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${m.author||'?'}</a> | ${m.chineseTeam ? '汉化: '+m.chineseTeam+' | ' : ''}${m.status||'?'}</p>
           <p>${m.pagesCount||0}P | ${m.epsCount||0}话 | 👁 ${(m.totalViews||0).toLocaleString()} | ❤️ ${(m.totalLikes||0).toLocaleString()}</p>
-          ${m.categories ? `<p>分类: ${m.categories.join(', ')}</p>` : ''}
-          ${m.tags ? `<p>标签: ${m.tags.slice(0,15).join(', ')}</p>` : ''}
+          ${m.categories ? `<p>分类: ${m.categories.map(c => '<a href="search.html?keyword='+encodeURIComponent(c)+'" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+c+'</a>').join(', ')}</p>` : ''}
+          ${m.tags ? `<p>标签: ${m.tags.slice(0,15).map(t => '<a href="search.html?keyword='+encodeURIComponent(t)+'" style="color:#94a3b8;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t+'</a>').join(', ')}</p>` : ''}
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btnDownload" class="btn btn-primary">⬇ 下载</button>
+          </div>
         </div>
       </div>
       ${m.description ? `<div class="desc">${m.description}</div>` : ''}
@@ -56,6 +60,38 @@ async function renderDetail(comicId) {
         </div>
       ` : '<div class="empty">暂无章节数据</div>'}
     `;
+
+    document.getElementById('btnDownload').onclick = async function() {
+      var idx = data.comic_idx;
+      if (!idx && comicId.startsWith('idx_')) {
+        idx = parseInt(comicId.replace('idx_', ''));
+      }
+      var body = { page_concurrency: 3, chapter_concurrency: 1, comic_concurrency: 1 };
+      if (idx) {
+        body.targets = [idx];
+      } else if (m._id) {
+        body.comic_ids = [m._id];
+      } else {
+        alert('无法获取漫画信息');
+        return;
+      }
+      if (!confirm('确定下载「' + (m.title || '?') + '」？')) return;
+      try {
+        var res = await fetch(API + '/download/start', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        if (res.ok) {
+          alert('已加入下载队列');
+        } else {
+          var j = await res.json();
+          alert('下载失败: ' + (j.detail || res.status));
+        }
+      } catch(e) {
+        alert('请求失败: ' + e.message);
+      }
+    };
   } catch(e) {
     app.innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>';
   }

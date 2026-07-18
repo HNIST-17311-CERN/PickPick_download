@@ -10,6 +10,7 @@ from app.services.download_service import DownloadService, DownloadStateManager
 from app.services.config_service import ConfigService
 from app.services.auth_service import AuthService
 from app.services.export_service import ExportService
+from app.services.search_service import SearchService
 
 
 def get_download_state(request: Request) -> DownloadStateManager:
@@ -58,3 +59,7 @@ def get_download_service() -> DownloadService:
 
 def get_export_service() -> ExportService:
     return ExportService()
+
+
+def get_search_service() -> SearchService:
+    return SearchService()

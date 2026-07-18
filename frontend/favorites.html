@@ -12,14 +12,15 @@
   <h1>📚 哔咔漫画</h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
-  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
 </div>
 
 <div class="container" id="app">
   <div class="loading">加载中...</div>
 </div>
 
-<script src="js/common.js"></script>
+<script src="js/common.js?v=4"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('favorites.html');

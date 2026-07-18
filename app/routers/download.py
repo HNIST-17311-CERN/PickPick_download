@@ -47,6 +47,7 @@ async def api_download_start(
 
     target = data.get("target", "all")
     targets = data.get("targets")  # list[int], 1-based 索引
+    comic_ids = data.get("comic_ids")  # list[str], 漫画 _id
     from app.repositories.config_repo import ConfigRepo
     cfg = ConfigRepo().read()
     if not cfg.get("token"):
@@ -54,6 +55,20 @@ async def api_download_start(
     page_conc = int(data.get("page_concurrency", cfg.get("page_concurrency", 3)))
     chapter_conc = int(data.get("chapter_concurrency", cfg.get("chapter_concurrency", 1)))
     comic_conc = int(data.get("comic_concurrency", cfg.get("comic_concurrency", 1)))
+
+    # 支持通过 _id 下载：从本地缓存找到对应序号
+    if comic_ids and isinstance(comic_ids, list) and len(comic_ids) > 0:
+        from app.repositories.comic_repo import ComicsMetadataRepo
+        comics = ComicsMetadataRepo().load_all()
+        id_to_idx = {}
+        for i, c in enumerate(comics):
+            if c.get("_id"):
+                id_to_idx[c["_id"]] = i
+        targets = []
+        for cid in comic_ids:
+            idx = id_to_idx.get(cid)
+            if idx is not None:
+                targets.append(idx + 1)  # 转 1-based
 
     if targets and isinstance(targets, list) and len(targets) > 0:
         # 批量下载：前端一次性传入 1-based 索引列表，后端全程处理

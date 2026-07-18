@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 
 from app.services.download_service import DownloadStateManager
-from app.routers import comics, favorites, download, config, auth, local_comics
+from app.routers import comics, favorites, download, config, auth, local_comics, search
 
 FRONTEND_DIR = Path("frontend")
 DETAIL_DIR = Path("comics_detail")
@@ -45,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(config.router)
     app.include_router(auth.router)
     app.include_router(local_comics.router)
+    app.include_router(search.router)
 
     # 静态文件挂载
     if FRONTEND_DIR.exists():
@@ -54,15 +55,19 @@ def create_app() -> FastAPI:
         app.mount("/images", StaticFiles(directory=str(DETAIL_DIR)), name="images")
 
     # 页面路由
-    for page in ["index.html", "favorites.html", "download.html", "settings.html", "detail.html", "detail-api.html", "reader.html"]:
+    for page in ["index.html", "favorites.html", "download.html", "settings.html", "detail.html", "detail-api.html", "reader.html", "search.html"]:
         fp = FRONTEND_DIR / page
         if fp.exists():
-            def _make_route(path):
-                @app.get(f"/{page}")
+            def _make_route(path, pagename):
+                @app.get(f"/{pagename}")
                 async def _page():
-                    return FileResponse(str(path))
+                    resp = FileResponse(str(path))
+                    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                    resp.headers["Pragma"] = "no-cache"
+                    resp.headers["Expires"] = "0"
+                    return resp
                 return _page
-            _make_route(fp)
+            _make_route(fp, page)
 
     @app.get("/")
     async def index():

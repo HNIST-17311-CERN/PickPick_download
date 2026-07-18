@@ -55,37 +55,59 @@ class FavoriteService:
         status: str = "",
         sort: str = "dd",
     ) -> dict:
-        """实时从 Pica API 拉取收藏列表（不依赖本地缓存）"""
+        """收藏列表。有筛选时走本地缓存全量过滤，无筛选时走 API 分页。"""
         from app.core.pica_client import AsyncPicaClient
 
         cfg = ConfigRepo().read()
         if not cfg.get("token") or not cfg.get("nonce"):
             return {"items": [], "total": 0, "new_count": 0, "page": page, "per_page": per_page, "categories": []}
 
-        # Pica API 每页最多返回 page_data["limit"] 条，前端 per_page 直接当 limit
-        client = AsyncPicaClient(cfg)
-        try:
-            data = await client.get_favourites(page=page, sort=sort, limit=per_page)
-        finally:
-            await client.close()
-
-        page_data = data.get("data", {}).get("comics", {})
-        comics = page_data.get("docs", [])
-        total = page_data.get("total", 0)
-
-        id_map = self._build_id_map() if DETAIL_DIR.exists() else {}
+        need_filter = bool(category or status)
+        if need_filter:
+            all_comics = self._comic.load_all()
+            total = len(all_comics)
+            id_map = self._build_id_map() if DETAIL_DIR.exists() else {}
+        else:
+            fetch_limit = max(per_page, 60)
+            client = AsyncPicaClient(cfg)
+            try:
+                all_comics = []
+                cp = page
+                while len(all_comics) < fetch_limit:
+                    data = await client.get_favourites(page=cp, sort=sort, limit=min(40, fetch_limit - len(all_comics)))
+                    pd = data.get("data", {}).get("comics", {})
+                    batch = pd.get("docs", [])
+                    total = pd.get("total", 0)
+                    pages_total = pd.get("pages", 1)
+                    all_comics.extend(batch)
+                    if cp >= pages_total or not batch:
+                        break
+                    cp += 1
+            finally:
+                await client.close()
+            id_map = self._build_id_map() if DETAIL_DIR.exists() else {}
 
         items = []
-        for i, c in enumerate(comics):
+        for i, c in enumerate(all_comics):
             cid = c.get("_id", "")
             scan = id_map.get(cid)
             if scan:
-                dl_status = "downloaded" if (scan["chapter_total"] > 0 and scan["chapter_done"] >= scan["chapter_total"]) else "partial"
+                if scan["chapter_total"] > 0 and scan["chapter_done"] >= scan["chapter_total"]:
+                    dl_status = "downloaded"
+                elif scan["chapter_done"] > 0:
+                    dl_status = "partial"
+                else:
+                    dl_status = "none"
             else:
                 dl_status = "none"
 
             if status and dl_status != status:
                 continue
+
+            if category:
+                cats = c.get("categories", [])
+                if category not in cats:
+                    continue
 
             # 封面：本地优先，否则用 CDN
             cover_url = ""
@@ -112,13 +134,24 @@ class FavoriteService:
                 "chapter_errors": scan["chapter_errors"] if scan else 0,
             })
 
+        # 本地分页
+        filtered_total = len(items)
+        start = (page - 1) * per_page
+        paged_items = items[start:start + per_page]
+
+        # 收集所有分类
+        all_cats = set()
+        for c in all_comics:
+            for cat_name in c.get("categories", []):
+                all_cats.add(cat_name)
+
         return {
-            "items": items,
-            "total": total,
+            "items": paged_items,
+            "total": filtered_total,
             "new_count": 0,
             "page": page,
             "per_page": per_page,
-            "categories": [],  # 实时模式下按需加载分类，前端已有 /api/categories
+            "categories": sorted(all_cats),
         }
 
     async def refresh_from_api(self) -> dict:
