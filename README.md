@@ -60,23 +60,11 @@ python server.py
 
 典型流程：**设置页配置凭证 → 收藏页刷新同步 → 下载页勾选启动 → 本地浏览阅读**
 
-CLI 模式（可选）：
-
-```bash
-python manga_api.py favourites    # 获取全量收藏列表
-python manga_api.py detail_all    # 获取每部漫画详情
-python manga_api.py download all  # 下载全部图片
-python manga_api.py check         # 检查下载进度
-```
-
 ## 项目结构
 
 ```
 .
 ├── server.py                  # FastAPI 启动入口（首次运行自动建配置）
-├── setup.bat / setup.sh       # 一键安装脚本
-├── config.example.yaml        # 配置文件模板
-├── manga_api.py               # 旧版 CLI 工具（保留参考）
 ├── app/                       # FastAPI 模块化架构
 │   ├── main.py                # 应用工厂 + 路由注册
 │   ├── dependencies.py        # 依赖注入容器
