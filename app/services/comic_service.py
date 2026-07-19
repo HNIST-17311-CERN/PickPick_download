@@ -24,9 +24,12 @@ class ComicService:
         }
 
     async def list_comics(
-        self, category: str = "", page: int = 1, per_page: int = 35
+        self, categories: list[str] | None = None, page: int = 1, per_page: int = 35, match_mode: str = "or"
     ) -> dict:
         """列出本地已下载的漫画"""
+        if categories is None:
+            categories = []
+        categories = [c for c in categories if c]
         folders = await self._detail.list_folders()
         items = []
         for folder in folders:
@@ -37,8 +40,13 @@ class ComicService:
             done = sum(1 for ch in chapters if ch.get("downloaded", 0) >= ch.get("totalPages", 1))
             errors = sum(1 for ch in chapters if ch.get("error"))
             cats = meta.get("categories", [])
-            if category and category not in cats:
-                continue
+            if categories:
+                if match_mode == "and":
+                    if not all(c in cats for c in categories):
+                        continue
+                else:
+                    if not any(c in cats for c in categories):
+                        continue
             items.append({
                 "folder": folder.name,
                 "title": meta.get("title", folder.name[4:]),

@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 
 from app.services.download_service import DownloadStateManager
-from app.routers import comics, favorites, download, config, auth, local_comics, search
+from app.routers import comics, favorites, download, config, auth, local_comics, search, categories
 
 FRONTEND_DIR = Path("frontend")
 DETAIL_DIR = Path("comics_detail")
@@ -46,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(local_comics.router)
     app.include_router(search.router)
+    app.include_router(categories.router)
 
     # 静态文件挂载
     if FRONTEND_DIR.exists():
@@ -55,7 +56,7 @@ def create_app() -> FastAPI:
         app.mount("/images", StaticFiles(directory=str(DETAIL_DIR)), name="images")
 
     # 页面路由
-    for page in ["index.html", "favorites.html", "download.html", "settings.html", "detail.html", "detail-api.html", "reader.html", "search.html"]:
+    for page in ["index.html", "favorites.html", "download.html", "settings.html", "detail.html", "detail-api.html", "reader.html", "search.html", "categories.html"]:
         fp = FRONTEND_DIR / page
         if fp.exists():
             def _make_route(path, pagename):

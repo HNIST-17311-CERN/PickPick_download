@@ -49,20 +49,25 @@ class FavoriteService:
 
     async def list_favorites(
         self,
-        category: str = "",
+        categories: list[str] | None = None,
         page: int = 1,
         per_page: int = 35,
         status: str = "",
         sort: str = "dd",
+        match_mode: str = "or",
     ) -> dict:
         """收藏列表。有筛选时走本地缓存全量过滤，无筛选时走 API 分页。"""
         from app.core.pica_client import AsyncPicaClient
+
+        if categories is None:
+            categories = []
+        categories = [c for c in categories if c]
 
         cfg = ConfigRepo().read()
         if not cfg.get("token") or not cfg.get("nonce"):
             return {"items": [], "total": 0, "new_count": 0, "page": page, "per_page": per_page, "categories": []}
 
-        need_filter = bool(category or status)
+        need_filter = bool(categories or status)
         if need_filter:
             all_comics = self._comic.load_all()
             total = len(all_comics)
@@ -104,10 +109,14 @@ class FavoriteService:
             if status and dl_status != status:
                 continue
 
-            if category:
-                cats = c.get("categories", [])
-                if category not in cats:
-                    continue
+            if categories:
+                comic_cats = c.get("categories", [])
+                if match_mode == "and":
+                    if not all(cat in comic_cats for cat in categories):
+                        continue
+                else:
+                    if not any(cat in comic_cats for cat in categories):
+                        continue
 
             # 封面：本地优先，否则用 CDN
             cover_url = ""

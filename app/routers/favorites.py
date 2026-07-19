@@ -1,5 +1,5 @@
 """收藏路由"""
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from app.dependencies import get_favorite_service, get_comic_service
 from app.services.favorite_service import FavoriteService
@@ -10,14 +10,15 @@ router = APIRouter(prefix="/api", tags=["favorites"])
 
 @router.get("/favorites")
 async def api_favorites(
-    category: str = "",
+    category: list[str] = Query([]),
     page: int = 1,
     per_page: int = 35,
     status: str = "",
     sort: str = "dd",
+    match_mode: str = "or",
     fav_svc: FavoriteService = Depends(get_favorite_service),
 ):
-    return await fav_svc.list_favorites(category, page, per_page, status, sort)
+    return await fav_svc.list_favorites(category, page, per_page, status, sort, match_mode)
 
 
 @router.post("/favorites/refresh")

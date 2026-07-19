@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 分类浏览</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.cat-section{margin-bottom:24px}
+.cat-section h3{font-size:1em;color:#ccc;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #2a2a2a;font-weight:600}
+.cat-section h3 .count{font-weight:400;color:#666;font-size:.85em;margin-left:6px}
+.cat-cloud{display:flex;flex-wrap:wrap;gap:8px}
+.cat-chip{padding:6px 14px;border:1px solid #333;border-radius:16px;background:#1a1a1a;color:#aaa;cursor:pointer;font-size:.8em;transition:.15s;white-space:nowrap;user-select:none}
+.cat-chip:hover{border-color:#555;color:#ddd}
+.cat-chip.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.source-tabs{display:flex;gap:4px;margin-bottom:16px}
+.source-tabs button{padding:8px 20px;border:1px solid #333;border-radius:6px 6px 0 0;background:#1a1a1a;color:#888;cursor:pointer;font-size:.85em;transition:.15s}
+.source-tabs button.active{background:#2563eb;border-color:#2563eb;color:#fff}
+#resultArea{border-top:2px solid #2563eb;padding-top:20px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js?v=4"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('categories.html');
+
+const STATUS_LABEL = {downloaded:'已下载', partial:'部分', none:'未下载'};
+const STATUS_CLR = {downloaded:'#4ade80', partial:'#fbbf24', none:'#666'};
+
+async function renderCategories() {
+  const state = _loadState('catpage', { subs: [], source: 'favorites', page: 1, perPage: 35, multi: false, match_mode: 'or' });
+  let groups = [];
+
+  try {
+    const data = await fetchJSON(`${API}/categories/full`);
+    groups = data.groups || [];
+  } catch(e) {
+    groups = [];
+  }
+
+  async function loadItems(subs) {
+    if (!subs || subs.length === 0) return { items: [], total: 0 };
+    const qs = subs.map(s => `category=${encodeURIComponent(s)}`).join('&');
+    const mm = (subs.length > 1 && state.multi) ? `&match_mode=${state.match_mode || 'or'}` : '';
+    const url = state.source === 'favorites'
+      ? `${API}/favorites?${qs}&page=${state.page}&per_page=${state.perPage}${mm}`
+      : `${API}/comics?${qs}&page=${state.page}&per_page=${state.perPage}${mm}`;
+    try {
+      return await fetchJSON(url);
+    } catch(e) {
+      return { items: [], total: 0 };
+    }
+  }
+
+  const render = async () => {
+    const subs = (state.subs && state.subs.length) ? [...state.subs] : [];
+    let data = { items: [], total: 0 };
+    let loading = false;
+
+    if (subs.length > 0) {
+      loading = true;
+      try {
+        data = await loadItems(subs);
+      } catch(e) {
+        data = { items: [], total: 0 };
+      }
+      loading = false;
+    }
+
+    const totalPages = Math.max(1, Math.ceil((data && data.total || 0) / state.perPage));
+    const subSet = new Set(subs);
+    const items = data && data.items ? data.items : [];
+    const total = data && data.total ? data.total : 0;
+
+    app.innerHTML = `
+      <h2 style="margin-bottom:12px;font-size:1.1em;color:#ccc">📂 分类浏览
+        <label style="color:#aaa;font-size:.7em;cursor:pointer;margin-left:12px;font-weight:400">
+          <input type="checkbox" id="chkMulti" ${state.multi?'checked':''}> 多选
+        </label>
+        ${subs.length > 0 ? `<span style="color:#888;font-size:.7em;font-weight:400;margin-left:12px">${subs.join(' + ')} · ${total}部</span>` : ''}
+      </h2>
+      ${state.multi ? `
+      <div style="margin-bottom:16px;font-size:.75em;color:#666;display:flex;align-items:center;gap:6px">
+        匹配:
+        <select id="selMatch" style="padding:2px 6px;border:1px solid #333;border-radius:4px;background:#1a1a1a;color:#888;font-size:1em;cursor:pointer">
+          <option value="or" ${state.match_mode==='or'?'selected':''}>模糊(或)</option>
+          <option value="and" ${state.match_mode==='and'?'selected':''}>精准(且)</option>
+        </select>
+        ${subs.length < 2 ? '<span>（≥2个分类生效）</span>' : ''}
+      </div>
+      ` : ''}
+
+      ${groups.map(g => `
+      <div class="cat-section">
+        <h3>${g.name}<span class="count">${g.subs.length}</span></h3>
+        <div class="cat-cloud">
+          ${g.subs.map(s => `
+            <span class="cat-chip ${subSet.has(s)?'active':''}" data-sub="${s}">${s}</span>
+          `).join('')}
+        </div>
+      </div>
+      `).join('')}
+
+      ${subs.length > 0 ? `
+      <div class="source-tabs">
+        <button data-src="favorites" class="${state.source==='favorites'?'active':''}">📡 收藏</button>
+        <button data-src="local" class="${state.source==='local'?'active':''}">💾 本地</button>
+      </div>
+
+      <div id="resultArea">
+        <div class="toolbar" style="margin-bottom:16px">
+          <span>${subs.join(' + ')} · 共 ${total} 部 · ${state.page}/${totalPages}</span>
+          <select id="perPage">
+            <option value="35" ${state.perPage===35?'selected':''}>每页35部</option>
+            <option value="60" ${state.perPage===60?'selected':''}>每页60部</option>
+          </select>
+          <button id="btnPrev" ${state.page<=1?'disabled':''}>←</button>
+          <button id="btnNext" ${state.page>=totalPages?'disabled':''}>→</button>
+        </div>
+        ${loading ? '<div class="loading">加载中...</div>' : ''}
+        ${!loading && items.length === 0
+          ? '<div class="empty">该分类下暂无漫画</div>'
+          : `<div class="grid">${items.map(item => {
+            const id = item.folder || ('_id-'+item._id);
+            const detailUrl = state.source === 'favorites'
+              ? `detail-api.html?id=${encodeURIComponent(id)}`
+              : `detail.html?id=${encodeURIComponent(id)}`;
+            const coverUrl = state.source === 'favorites'
+              ? (item.cover_url ? resolveUrl(item.cover_url) : '')
+              : (item.has_cover ? BASE+'/images/'+encodeURIComponent(item.folder)+'/cover.jpg' : '');
+            return `
+            <div class="card" onclick="location.href='${detailUrl}'" style="cursor:pointer">
+              <div style="position:relative">
+                ${coverUrl ? `<img src="${coverUrl}" alt="${item.title}" onerror="this.style.display='none'">` : '<div style="width:100%;aspect-ratio:3/4;background:#111;display:flex;align-items:center;justify-content:center;color:#555;font-size:.8em">无封面</div>'}
+                ${item.dl_status ? `<span style="position:absolute;top:6px;right:6px;background:${STATUS_CLR[item.dl_status]};color:#000;font-size:.7em;padding:2px 8px;border-radius:4px;font-weight:700">${STATUS_LABEL[item.dl_status]}</span>` : ''}
+              </div>
+              <div class="info">
+                <div class="title">${item.title}</div>
+                <div class="meta">${item.epsCount||''}话${item.author ? ' · '+item.author : ''}${item.chapter_done ? ` · ${item.chapter_done}/${item.chapter_total}话已下` : ''}</div>
+              </div>
+            </div>`;
+          }).join('')}</div>`
+        }
+      </div>
+      ` : '<div class="empty" style="padding:40px;color:#555">👆 点击上方分类标签浏览漫画</div>'}`;
+
+    const chkMulti = document.getElementById('chkMulti');
+    if (chkMulti) chkMulti.onchange = () => {
+      state.multi = chkMulti.checked;
+      if (!state.multi && state.subs.length > 1) {
+        state.subs = [state.subs[state.subs.length - 1]];
+      }
+      state.page = 1;
+      _saveState('catpage', state);
+      render();
+    };
+
+    const selMatch = document.getElementById('selMatch');
+    if (selMatch) selMatch.onchange = () => {
+      state.match_mode = selMatch.value;
+      state.page = 1;
+      _saveState('catpage', state);
+      render();
+    };
+
+    document.querySelectorAll('.cat-chip').forEach(chip => {
+      chip.onclick = () => {
+        const s = chip.dataset.sub;
+        if (state.multi) {
+          const idx = state.subs.indexOf(s);
+          if (idx >= 0) {
+            state.subs = state.subs.filter(x => x !== s);
+          } else {
+            state.subs = [...state.subs, s];
+          }
+        } else {
+          state.subs = [s];
+        }
+        state.page = 1;
+        _saveState('catpage', state);
+        render();
+      };
+    });
+
+    document.querySelectorAll('.source-tabs button').forEach(btn => {
+      btn.onclick = () => {
+        state.source = btn.dataset.src;
+        state.page = 1;
+        _saveState('catpage', state);
+        render();
+      };
+    });
+
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const perPage = document.getElementById('perPage');
+    if (btnPrev) btnPrev.onclick = () => { state.page--; _saveState('catpage', state); render(); };
+    if (btnNext) btnNext.onclick = () => { state.page++; _saveState('catpage', state); render(); };
+    if (perPage) perPage.onchange = () => { state.perPage = +perPage.value; state.page = 1; _saveState('catpage', state); render(); };
+  };
+
+  render();
+}
+
+renderCategories();
+</script>
+</body>
+</html>

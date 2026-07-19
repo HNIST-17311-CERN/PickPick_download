@@ -90,7 +90,7 @@ async function renderGrid() {
         : `<div class="grid">${data.items.map(item => `
           <div class="card" style="position:relative;cursor:pointer" onclick="${batchMode ? 'event.stopPropagation();window._gridToggleCard(this)' : `location.href='detail.html?id=${encodeURIComponent(item.folder)}'`}">
             ${batchMode ? '<input type="checkbox" class="batch-check" data-folder="'+item.folder+'" '+(selected.has(item.folder)?'checked':'')+' onclick="event.stopPropagation()">' : ''}
-            <img src="${item.has_cover ? BASE+'/images/'+item.folder+'/cover.jpg' : ''}" alt="${item.title}" onerror="this.style.display='none'">
+            <img src="${item.has_cover ? BASE+'/images/'+encodeURIComponent(item.folder)+'/cover.jpg' : ''}" alt="${item.title}" onerror="this.style.display='none'">
             <div class="info">
               <div class="title">${item.title}</div>
               <div class="meta">${item.chapter_done}/${item.chapter_total}话 · ${item.author}${item.chapter_errors ? ' · <span style="color:#f87171">⚠'+item.chapter_errors+'</span>' : ''}</div>

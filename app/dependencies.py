@@ -11,6 +11,7 @@ from app.services.config_service import ConfigService
 from app.services.auth_service import AuthService
 from app.services.export_service import ExportService
 from app.services.search_service import SearchService
+from app.services.category_service import CategoryService
 
 
 def get_download_state(request: Request) -> DownloadStateManager:
@@ -63,3 +64,7 @@ def get_export_service() -> ExportService:
 
 def get_search_service() -> SearchService:
     return SearchService()
+
+
+def get_category_service() -> CategoryService:
+    return CategoryService(ComicsDetailRepo(), ComicsMetadataRepo())

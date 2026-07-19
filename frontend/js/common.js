@@ -55,6 +55,7 @@ function renderTopbar(active) {
     { label: '\u{1F4DA} \u6536\u85CF', href: 'favorites.html' },
     { label: '\u{1F4CB} \u672C\u5730\u6D4F\u89C8', href: 'index.html' },
     { label: '\u{1F4E5} \u4E0B\u8F7D\u7BA1\u7406', href: 'download.html' },
+    { label: '\u{1F4C2} \u5206\u7C7B', href: 'categories.html' },
     { label: '\u{1F50D} \u641C\u7D22', href: 'search.html' },
     { label: '\u2699\uFE0F \u8BBE\u7F6E', href: 'settings.html' },
   ];

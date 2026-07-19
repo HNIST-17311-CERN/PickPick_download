@@ -1,6 +1,6 @@
 """漫画浏览路由 — 本地漫画列表、详情、章节图片、删除"""
 import asyncio
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, Query
 
 from app.dependencies import get_comic_service, get_download_state
 from app.services.comic_service import ComicService
@@ -12,12 +12,13 @@ router = APIRouter(prefix="/api/comics", tags=["comics"])
 
 @router.get("")
 async def api_comics(
-    category: str = "",
+    category: list[str] = Query([]),
     page: int = 1,
     per_page: int = 35,
+    match_mode: str = "or",
     comic_svc: ComicService = Depends(get_comic_service),
 ):
-    return await comic_svc.list_comics(category, page, per_page)
+    return await comic_svc.list_comics(category, page, per_page, match_mode)
 
 
 @router.get("/{folder_name}")
