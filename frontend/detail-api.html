@@ -43,7 +43,9 @@ async function renderDetail(comicId) {
           ${m.categories ? `<p>分类: ${m.categories.map(c => '<a href="search.html?keyword='+encodeURIComponent(c)+'" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+c+'</a>').join(', ')}</p>` : ''}
           ${m.tags ? `<p>标签: ${m.tags.slice(0,15).map(t => '<a href="search.html?keyword='+encodeURIComponent(t)+'" style="color:#94a3b8;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t+'</a>').join(', ')}</p>` : ''}
           <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="btnDownload" class="btn btn-primary">⬇ 下载</button>
+            ${data.is_downloaded
+              ? `<a href="detail.html?folder=${encodeURIComponent(data.local_folder)}" class="btn btn-primary" style="text-decoration:none">📖 本地阅读</a><button class="btn" style="background:#2a2a2a;color:#555;cursor:not-allowed" disabled>⬇ 已下载</button>`
+              : '<button id="btnDownload" class="btn btn-primary">⬇ 下载</button>'}
           </div>
         </div>
       </div>
@@ -51,17 +53,24 @@ async function renderDetail(comicId) {
       ${chs.length > 0 ? `
         <h3 style="margin-bottom:8px">📑 章节列表 (${chs.length}话)</h3>
         <div class="chapter-grid">
-          ${chs.map(ch => `
-            <div class="chapter-card ch-none">
+          ${chs.map(ch => {
+            const cls = ch.error ? 'ch-error' : ch.totalPages > 0 && ch.downloaded >= ch.totalPages ? 'ch-done' : ch.downloaded > 0 ? 'ch-partial' : 'ch-none';
+            const st = ch.error ? '下载失败' : ch.totalPages > 0
+              ? (ch.downloaded >= ch.totalPages ? '已下载' : ch.downloaded + '/' + ch.totalPages + 'P')
+              : '未下载';
+            return `
+            <div class="chapter-card ${cls}">
               <div class="name">${ch.title||'第'+ch.order+'话'}</div>
-              <div class="pct" style="color:#666">未下载</div>
-            </div>
-          `).join('')}
+              <div class="pct">${st}</div>
+            </div>`;
+          }).join('')}
         </div>
       ` : '<div class="empty">暂无章节数据</div>'}
     `;
 
-    document.getElementById('btnDownload').onclick = async function() {
+    const btnDownload = document.getElementById('btnDownload');
+    if (btnDownload) {
+      btnDownload.onclick = async function() {
       var idx = data.comic_idx;
       if (!idx && comicId.startsWith('idx_')) {
         idx = parseInt(comicId.replace('idx_', ''));
@@ -92,6 +101,7 @@ async function renderDetail(comicId) {
         alert('请求失败: ' + e.message);
       }
     };
+    }
   } catch(e) {
     app.innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>';
   }

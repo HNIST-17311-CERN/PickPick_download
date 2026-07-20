@@ -58,7 +58,7 @@ async function renderFavorites() {
       ${data.items.length === 0
         ? '<div class="empty">暂无匹配的漫画</div>'
         : `<div class="grid">${data.items.map(item => `
-          <div class="card" onclick="location.href='detail-api.html?id=${encodeURIComponent(item.folder||'_id-'+item._id)}'" style="cursor:pointer">
+           <div class="card" onclick="location.href='detail-api.html?id=${encodeURIComponent(item.folder||'_id-'+item._id)}'" style="cursor:pointer">
             <div style="position:relative">
               ${item.cover_url ? `<img src="${resolveUrl(item.cover_url)}" alt="${item.title}" onerror="this.style.display='none'">` : '<div style="width:100%;aspect-ratio:3/4;background:#111;display:flex;align-items:center;justify-content:center;color:#555;font-size:.8em">无封面</div>'}
               <span style="position:absolute;top:6px;right:6px;background:${statusClr[item.dl_status]};color:#000;font-size:.7em;padding:2px 8px;border-radius:4px;font-weight:700">${statusLabel[item.dl_status]}</span>

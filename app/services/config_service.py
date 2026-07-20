@@ -4,6 +4,13 @@ from pathlib import Path
 from app.repositories.config_repo import ConfigRepo
 
 
+def get_detail_dir() -> Path:
+    """读取 download_dir 配置，返回实际路径；空则回退 comics_detail"""
+    cfg = ConfigRepo().read()
+    val = str(cfg.get("download_dir", "")).strip()
+    return Path(val) if val else Path("comics_detail")
+
+
 class ConfigService:
     def __init__(self, config_repo: ConfigRepo):
         self._repo = config_repo
@@ -18,7 +25,7 @@ class ConfigService:
         cfg = self._repo.read()
         for key in [
             "proxy", "page_concurrency", "chapter_concurrency", "comic_concurrency",
-            "max_retries", "api_base", "image_proxy_domain", "download_dir", "cover_dir",
+            "max_retries", "api_base", "image_proxy_domain", "download_dir",
         ]:
             if key in data and data[key] is not None:
                 cfg[key] = data[key]

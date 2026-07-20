@@ -5,7 +5,7 @@ import re
 import time
 from pathlib import Path
 
-from app.repositories.comic_repo import ComicsMetadataRepo, ComicsDetailRepo, DETAIL_DIR
+from app.repositories.comic_repo import ComicsMetadataRepo, ComicsDetailRepo
 from app.repositories.download_repo import DownloadProgressRepo
 from app.core.file_utils import safe_filename, build_image_url, download_image_async
 
@@ -121,8 +121,8 @@ class DownloadService:
 
         # 构建 _id → folder 映射
         id_map = {}
-        if DETAIL_DIR.exists():
-            for d in DETAIL_DIR.glob("*"):
+        if self._detail._base.exists():
+            for d in self._detail._base.glob("*"):
                 if not d.is_dir():
                     continue
                 mp = d / "metadata.json"
@@ -210,8 +210,8 @@ class DownloadService:
 
             # 构建 _id → folder 映射
             id_map = {}
-            if DETAIL_DIR.exists():
-                for d in DETAIL_DIR.glob("*"):
+            if self._detail._base.exists():
+                for d in self._detail._base.glob("*"):
                     if not d.is_dir():
                         continue
                     mp = d / "metadata.json"
@@ -235,7 +235,7 @@ class DownloadService:
                 folder = id_map.get(cid)
                 if not folder:
                     new_num = len(comics) - idx
-                    folder = DETAIL_DIR / f"{new_num:03d}_{safe_filename(c['title'])}"
+                    folder = self._detail._base / f"{new_num:03d}_{safe_filename(c['title'])}"
 
                 # 首次下载：获取详情
                 if not folder.exists():

@@ -4,7 +4,9 @@ import json
 import time
 from pathlib import Path
 
-DETAIL_DIR = Path("comics_detail")
+from app.services.config_service import get_detail_dir
+
+DETAIL_DIR = get_detail_dir()
 
 
 class ComicsMetadataRepo:
@@ -33,8 +35,8 @@ class ComicsMetadataRepo:
 class ComicsDetailRepo:
     """comics_detail/* — 本地漫画文件夹"""
 
-    def __init__(self, base_dir: Path = DETAIL_DIR):
-        self._base = base_dir
+    def __init__(self, base_dir: Path | None = None):
+        self._base = base_dir or get_detail_dir()
 
     async def list_folders(self) -> list[Path]:
         if not self._base.exists():

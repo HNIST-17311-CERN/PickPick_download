@@ -9,10 +9,16 @@ from pathlib import Path
 import uvicorn
 
 
+def _bundle_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
+    return Path(".")
+
+
 def first_run_setup() -> None:
     """首次运行：从 config.example.yaml 自动创建 config.yaml"""
     config_path = Path("config.yaml")
-    example_path = Path("config.example.yaml")
+    example_path = _bundle_dir() / "config.example.yaml"
 
     if not example_path.exists():
         return
@@ -36,12 +42,14 @@ def first_run_setup() -> None:
 
 
 if __name__ == "__main__":
+    import app.main  # 确保 PyInstaller 追踪所有 app 子模块
     first_run_setup()
+    is_frozen = getattr(sys, "frozen", False)
     uvicorn.run(
         "app.main:app",
         host="127.0.0.1",
         port=8000,
-        reload=True,
-        reload_dirs=["app"],
-        reload_excludes=["*.json", "comics_detail/*", "__pycache__/*"],
+        reload=not is_frozen,
+        reload_dirs=["app"] if not is_frozen else [],
+        reload_excludes=["*.json", "comics_detail/*", "__pycache__/*"] if not is_frozen else [],
     )

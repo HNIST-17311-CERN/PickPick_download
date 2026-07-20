@@ -148,8 +148,7 @@ class ConfigResponse(BaseModel):
     page_concurrency: int = 3
     chapter_concurrency: int = 1
     max_retries: int = 30
-    download_dir: str = ""
-    cover_dir: str = ""
+    download_dir: str = "comics_detail"
     image_proxy_domain: str = ""
 
 
@@ -163,7 +162,6 @@ class ConfigUpdateRequest(BaseModel):
     chapter_concurrency: Optional[int] = None
     max_retries: Optional[int] = None
     download_dir: Optional[str] = None
-    cover_dir: Optional[str] = None
     image_proxy_domain: Optional[str] = None
 
 

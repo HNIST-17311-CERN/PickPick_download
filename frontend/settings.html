@@ -37,8 +37,7 @@ renderTopbar('settings.html');
     {key:'chapter_concurrency',label:'章节并发数',type:'number',ph:'3'},
     {key:'comic_concurrency',label:'漫画并发数',type:'number',ph:'1 (同时下几部)'},
     {key:'max_retries',label:'最大重试次数',type:'number',ph:'3'},
-    {key:'download_dir',label:'下载目录',type:'text',ph:'downloads'},
-    {key:'cover_dir',label:'封面下载目录',type:'text',ph:'covers'},
+    {key:'download_dir',label:'下载目录',type:'text',ph:'comics_detail'},
   ];
 
   app.innerHTML = `
@@ -79,7 +78,7 @@ renderTopbar('settings.html');
           <input name="${f.key}" type="${f.type}" placeholder="${f.ph}" value="${cfg[f.key]||''}"
             style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#ddd;font-size:.9em">
           ${f.key === 'token' ? '<div style="margin-top:6px;display:flex;gap:6px;align-items:center"><button type="button" id="btnTestToken" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:6px 14px">🔑 检查</button><button type="button" id="btnRefreshToken" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:6px 14px">🔄 刷新</button><span id="tokenResult" style="margin-left:6px;font-size:.8em"></span></div>' : ''}
-          ${f.key === 'download_dir' || f.key === 'cover_dir' ? '<button type="button" class="btnPickDir btn" style="background:#333;color:#ddd;margin-top:6px;font-size:.8em;padding:6px 14px" data-target="'+f.key+'">📂 浏览...</button>' : ''}
+          ${f.key === 'download_dir' ? '<button type="button" class="btnPickDir btn" style="background:#333;color:#ddd;margin-top:6px;font-size:.8em;padding:6px 14px" data-target="'+f.key+'">📂 浏览...</button>' : ''}
         </div>
       `).join('')}
       <button type="submit" class="btn btn-primary" style="margin-top:8px">💾 保存设置</button>

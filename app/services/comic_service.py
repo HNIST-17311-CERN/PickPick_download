@@ -23,6 +23,37 @@ class ComicService:
             "chapter_errors": errors,
         }
 
+    def _find_local_by_id(self, comic_id: str) -> tuple[Path | None, list[dict]]:
+        """通过 _id 查找本地已下载的漫画文件夹，返回 (folder, chapters)"""
+        if not DETAIL_DIR.exists() or not comic_id:
+            return None, []
+        for d in DETAIL_DIR.glob("*"):
+            if not d.is_dir():
+                continue
+            mp = d / "metadata.json"
+            if not mp.exists():
+                continue
+            try:
+                with open(mp, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                if meta.get("_id") == comic_id:
+                    return d, self._detail.read_chapters(d)
+            except Exception:
+                pass
+        return None, []
+
+    @staticmethod
+    def _merge_chapter_status(api_chapters: list[dict], local_chapters: list[dict]) -> list[dict]:
+        """将本地下载状态合并到 API 获取的章节列表中"""
+        local_map = {ch.get("order"): ch for ch in local_chapters}
+        for ch in api_chapters:
+            lc = local_map.get(ch.get("order"))
+            if lc:
+                ch["totalPages"] = lc.get("totalPages", 0)
+                ch["downloaded"] = lc.get("downloaded", 0)
+                ch["error"] = lc.get("error", False)
+        return api_chapters
+
     async def list_comics(
         self, categories: list[str] | None = None, page: int = 1, per_page: int = 35, match_mode: str = "or"
     ) -> dict:
@@ -80,15 +111,19 @@ class ComicService:
             return None
         meta = self._detail.read_metadata(folder) or {}
         chapters = self._detail.read_chapters(folder)
+        has_cover = self._detail.has_cover(folder)
         return {
             "folder": folder_name,
+            "local_folder": folder_name,
+            "is_downloaded": True,
             "meta": meta,
             "chapters": chapters,
-            "has_cover": self._detail.has_cover(folder),
+            "has_cover": has_cover,
+            "cover_url": f"/images/{folder_name}/cover.jpg" if has_cover else "",
         }
 
     async def get_api_detail(self, folder_name: str) -> dict | None:
-        """从 Pica API 获取未下载漫画的详情"""
+        """从 Pica API 获取未下载漫画的详情，同时合并本地下载状态"""
         import asyncio as _asyncio
         from app.repositories.config_repo import ConfigRepo
         from app.core.pica_client import AsyncPicaClient
@@ -113,10 +148,12 @@ class ComicService:
                 return None
             c = comics[idx]
             cid = c.get("_id", "")
+
+            local_folder, local_chapters = self._find_local_by_id(cid)
+
             detail = await client.get_comic_info(cid)
             api_comic = detail.get("data", {}).get("comic", {})
 
-            # 获取章节列表
             api_chapters = []
             ep_page = 1
             while True:
@@ -133,6 +170,8 @@ class ComicService:
                     break
                 ep_page += 1
 
+            self._merge_chapter_status(api_chapters, local_chapters)
+
             thumb = api_comic.get("thumb", {}) or c.get("thumb", {})
             cover_url = thumb.get("url") or thumb.get("proxyUrl") or ""
             if not cover_url:
@@ -145,6 +184,8 @@ class ComicService:
                 "folder": f"idx_{idx + 1}",
                 "comic_idx": idx + 1,
                 "from_api": True,
+                "local_folder": local_folder.name if local_folder else None,
+                "is_downloaded": local_folder is not None,
                 "meta": {
                     "_id": api_comic.get("_id", cid),
                     "title": api_comic.get("title") or c.get("title"),
@@ -171,7 +212,7 @@ class ComicService:
             await client.close()
 
     async def get_detail_by_id(self, comic_id: str) -> dict | None:
-        """直接用漫画 _id 从 Pica API 获取详情"""
+        """直接用漫画 _id 从 Pica API 获取详情，同时合并本地下载状态"""
         from app.core.pica_client import AsyncPicaClient
         from app.repositories.config_repo import ConfigRepo
 
@@ -179,14 +220,17 @@ class ComicService:
         if not cfg.get("token") or not comic_id:
             return None
 
+        local_folder, local_chapters = self._find_local_by_id(comic_id)
+
         client = AsyncPicaClient(cfg)
         try:
             detail = await client.get_comic_info(comic_id)
             api_comic = detail.get("data", {}).get("comic", {})
             if not api_comic:
+                if local_folder:
+                    return await self.get_detail(local_folder.name)
                 return None
 
-            # 获取章节列表
             api_chapters = []
             ep_page = 1
             while True:
@@ -203,6 +247,8 @@ class ComicService:
                     break
                 ep_page += 1
 
+            self._merge_chapter_status(api_chapters, local_chapters)
+
             thumb = api_comic.get("thumb", {})
             cover_url = thumb.get("url") or thumb.get("proxyUrl") or ""
             if not cover_url:
@@ -214,6 +260,8 @@ class ComicService:
             return {
                 "folder": f"_id-{comic_id}",
                 "from_api": True,
+                "local_folder": local_folder.name if local_folder else None,
+                "is_downloaded": local_folder is not None,
                 "meta": {
                     "_id": api_comic.get("_id", comic_id),
                     "title": api_comic.get("title", ""),

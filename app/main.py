@@ -1,4 +1,5 @@
 """FastAPI 应用工厂"""
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -7,10 +8,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 
 from app.services.download_service import DownloadStateManager
+from app.services.config_service import get_detail_dir
 from app.routers import comics, favorites, download, config, auth, local_comics, search, categories
 
-FRONTEND_DIR = Path("frontend")
-DETAIL_DIR = Path("comics_detail")
+
+def _bundle_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
+    return Path(__file__).parent.parent
+
+
+FRONTEND_DIR = _bundle_dir() / "frontend"
 
 
 def create_app() -> FastAPI:
@@ -52,8 +60,9 @@ def create_app() -> FastAPI:
     if FRONTEND_DIR.exists():
         app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
         app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
-    if DETAIL_DIR.exists():
-        app.mount("/images", StaticFiles(directory=str(DETAIL_DIR)), name="images")
+    detail_dir = get_detail_dir()
+    if detail_dir.exists():
+        app.mount("/images", StaticFiles(directory=str(detail_dir)), name="images")
 
     # 页面路由
     for page in ["index.html", "favorites.html", "download.html", "settings.html", "detail.html", "detail-api.html", "reader.html", "search.html", "categories.html"]:

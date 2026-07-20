@@ -8,5 +8,4 @@ request_delay: 1.5
 max_retries: 30
 proxy: ""
 image_proxy_domain: "go2778.com"
-download_dir: "downloads"
-cover_dir: "covers"
+download_dir: "comics_detail"
