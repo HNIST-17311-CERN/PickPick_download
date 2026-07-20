@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>哔咔漫画 - 详情</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme.css?v=4">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -20,7 +21,7 @@
   <div class="loading">加载中...</div>
 </div>
 
-<script src="js/common.js?v=4"></script>
+<script src="js/common.js?v=19"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -51,7 +52,7 @@ async function renderDetail(comicId) {
       </div>
       ${m.description ? `<div class="desc">${m.description}</div>` : ''}
       ${chs.length > 0 ? `
-        <h3 style="margin-bottom:8px">📑 章节列表 (${chs.length}话)</h3>
+        <h3 style="margin-bottom:8px"><svg style="width:18px;height:18px;vertical-align:-4px;margin-right:4px" stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>章节列表 (${chs.length}话)</h3>
         <div class="chapter-grid">
           ${chs.map(ch => {
             const cls = ch.error ? 'ch-error' : ch.totalPages > 0 && ch.downloaded >= ch.totalPages ? 'ch-done' : ch.downloaded > 0 ? 'ch-partial' : 'ch-none';

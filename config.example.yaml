@@ -12,3 +12,4 @@ download_dir: "comics_detail"
 embedding_api_key: ""
 embedding_api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
 similar_enabled: true
+image_quality: "standard"

@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>哔咔漫画 - 下载管理</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme.css?v=4">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -20,7 +21,7 @@
   <div class="loading">加载中...</div>
 </div>
 
-<script src="js/common.js?v=4"></script>
+<script src="js/common.js?v=19"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('download.html');
@@ -245,7 +246,7 @@ async function renderDownload() {
     <h2 style="margin-bottom:4px">📥 下载管理</h2>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
       <p style="color:#888;font-size:.85em;margin:0">${queueSummary}</p>
-      <button id="btnSyncFav" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px">🔄 同步收藏</button>
+      <button id="btnSyncFav" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32h128c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C80.1 115 65.2 140.5 55.7 167.7c-5.1 14.6-18.4 24.2-33.8 22.5s-26.3-13.7-24-28.8c8.4-46.6 30.7-89.1 65.3-123.7C160.7-59.8 370.2-59.8 467.8 37.8L481.4 64H432c-17.7 0-32 14.3-32 32s14.3 32 32 32z" fill="currentColor"/></svg>同步收藏</button>
       <button id="btnRefreshQue" class="btn" style="background:#333;color:#ddd;font-size:.75em;padding:4px 10px">🔍 刷新</button>
       ${!doneTotal ? `
         <button id="btnDlAllQue" class="btn btn-primary" style="font-size:.8em;padding:4px 14px;font-weight:600">⬇ 全部下载</button>
@@ -279,7 +280,7 @@ async function renderDownload() {
     <!-- 待下载列表 -->
     ${!doneTotal && queue.items.length > 0 ? `
     <details open style="margin-bottom:20px">
-      <summary style="cursor:pointer;color:#aaa;font-size:.9em;margin-bottom:8px">📋 待下载列表 (${queue.total} 部)</summary>
+      <summary style="cursor:pointer;color:#aaa;font-size:.9em;margin-bottom:8px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;color:inherit" viewBox="0 0 512 512"><path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM160 176c0 17.7 14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H192c-17.7 0-32 14.3-32 32zm0 96c0 17.7 14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H192c-17.7 0-32 14.3-32 32zm-64-96c0-17.7-14.3-32-32-32s-32 14.3-32 32 14.3 32 32 32 32-14.3 32-32zM64 368c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32z" fill="currentColor"/></svg>待下载列表 (${queue.total} 部)</summary>
       <div style="max-height:300px;overflow-y:auto;background:#1a1a1a;border-radius:8px;padding:8px">
         ${queue.items.slice(0,200).map(item => `
           <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #ffffff06;font-size:.85em">

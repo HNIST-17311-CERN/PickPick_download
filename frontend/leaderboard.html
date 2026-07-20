@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哔咔漫画 - 排行榜</title>
+<link rel="stylesheet" href="css/theme.css?v=4">
+  <link rel="stylesheet" href="css/style.css">
+<style>
+.rank-list { max-width:800px; margin:0 auto; }
+.rank-item { display:flex; gap:14px; padding:14px 0; border-bottom:1px solid #1e1e1e; cursor:pointer; align-items:center; }
+.rank-item:hover { background:#111; margin:0 -12px; padding:14px 12px; border-radius:8px; }
+.rank-number { width:36px; text-align:center; font-size:1.1em; font-weight:700; color:#666; flex-shrink:0; }
+.rank-number .medal { font-size:1.4em; }
+.rank-1 .rank-number { color:#fbbf24; }
+.rank-2 .rank-number { color:#94a3b8; }
+.rank-3 .rank-number { color:#d97706; }
+.rank-thumb { width:70px; height:94px; flex-shrink:0; overflow:hidden; border-radius:6px; background:#111; }
+.rank-thumb img { width:100%; height:100%; object-fit:cover; }
+.rank-body { flex:1; min-width:0; }
+.rank-title { font-size:.95em; font-weight:600; color:#ddd; margin:0 0 4px; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.rank-author { font-size:.75em; color:#888; margin:0 0 6px; }
+.rank-stats { display:flex; gap:14px; font-size:.75em; color:#888; margin-bottom:6px; }
+.rank-stats span { display:flex; align-items:center; gap:3px; }
+.rank-tags { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px; }
+.rank-tag { background:#1e1e1e; color:#888; font-size:.65em; padding:2px 8px; border-radius:10px; }
+.rank-badge { background:linear-gradient(135deg,#fbbf24,#d97706); color:#000; font-size:.7em; padding:2px 8px; border-radius:4px; font-weight:700; display:inline-block; margin-left:8px; }
+.rank-dl { flex-shrink:0; }
+.rank-dl .btn { font-size:.75em; padding:6px 14px; }
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; max-width:800px; margin-left:auto; margin-right:auto; }
+.tab-bar .btn { font-size:.8em; padding:6px 16px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 哔咔漫画</h1>
+  <nav id="topnav"></nav>
+  <span style="flex:1"></span>
+  <span id="searchWrap" style="display:flex;align-items:center"></span>
+  <span id="tokenStatus" style="font-size:.75em;color:#666;white-space:nowrap;margin-left:12px"></span>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">加载中...</div>
+</div>
+
+<script src="js/common.js?v=19"></script>
+<script>
+const app = document.getElementById('app');
+renderTopbar('leaderboard.html');
+let _currentTT = 'H24';
+let _currentCT = 'VC';
+const tabs = [
+  {tt:'H24',ct:'VC',label:'24小时'},
+  {tt:'D7',ct:'VC',label:'7天'},
+  {tt:'D30',ct:'VC',label:'30天'},
+];
+
+async function render() {
+  try {
+    const data = await fetchJSON(`${API}/leaderboard?tt=${_currentTT}&ct=${_currentCT}`);
+    const items = data.items || [];
+
+    const topMedals = ['🥇','🥈','🥉'];
+    const topCls = ['rank-1','rank-2','rank-3'];
+
+    app.innerHTML = `
+      <div class="tab-bar">
+        ${tabs.map(t => {
+          const active = t.tt === _currentTT;
+          return `<button class="btn" style="background:${active?'#60a5fa':'#1a1a1a'};color:${active?'#000':'#aaa'};border:1px solid ${active?'#60a5fa':'#2a2a2a'}"
+            onclick="switchTab('${t.tt}','${t.ct}')">${t.label}</button>`;
+        }).join('')}
+      </div>
+      ${items.length === 0
+        ? '<div class="empty">暂无数据，请先登录</div>'
+        : `<div class="rank-list">${items.map((item,i) => `
+          <div class="rank-item ${i<3?topCls[i]:''}" onclick="location.href='detail-api.html?id=_id-${item._id}'">
+            <div class="rank-number">
+              ${i<3 ? `<span class="medal">${topMedals[i]}</span>` : `<span>${i+1}</span>`}
+            </div>
+            <div class="rank-thumb">
+              ${item.cover_url ? `<img src="${resolveUrl(item.cover_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#444;font-size:.7em\\'>无封面</div>'">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#444;font-size:.7em">无封面</div>'}
+            </div>
+            <div class="rank-body">
+              <div class="rank-title">${item.title}${i===0?'<span class="rank-badge">24小时冠军</span>':''}</div>
+              <div class="rank-author">作者：${item.author||'?'}</div>
+              <div class="rank-stats">
+                <span>👁 ${(item.totalViews||0).toLocaleString()}</span>
+                <span>❤️ ${(item.totalLikes||0).toLocaleString()}</span>
+                <span>📄 ${item.epsCount}话</span>
+              </div>
+              <div class="rank-tags">${(item.categories||[]).slice(0,4).map(c => `<span class="rank-tag">${c}</span>`).join('')}</div>
+            </div>
+            <div class="rank-dl">
+              <button class="btn btn-primary" onclick="event.stopPropagation();downloadComic('${item._id}','${item.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">⬇ 下载</button>
+            </div>
+          </div>
+        `).join('')}</div>`
+      }`;
+  } catch(e) {
+    app.innerHTML = '<div class="loading" style="color:#f87171">加载失败: ' + e.message + '</div>';
+  }
+}
+
+function switchTab(tt, ct) {
+  _currentTT = tt;
+  _currentCT = ct;
+  render();
+}
+
+async function downloadComic(comicId, title) {
+  if (!confirm(`确定下载「${title}」？`)) return;
+  try {
+    const res = await fetch(API + '/download/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({comic_ids: [comicId]})
+    });
+    if (res.ok) {
+      alert('已加入下载队列');
+    } else {
+      const j = await res.json();
+      alert('下载失败: ' + (j.detail || res.status));
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+render();
+</script>
+</body>
+</html>

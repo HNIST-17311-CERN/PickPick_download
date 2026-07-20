@@ -166,3 +166,10 @@ class AsyncPicaClient:
             method="POST",
             data={"email": email, "password": password},
         )
+
+    # ==== 排行榜 ====
+
+    async def get_leaderboard(self, tt: str = "H24", ct: str = "VC") -> dict:
+        return await self._request(
+            f"/comics/leaderboard?tt={tt}&ct={ct}"
+        )

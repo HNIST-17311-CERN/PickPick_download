@@ -153,6 +153,7 @@ class ConfigResponse(BaseModel):
     embedding_api_key: str = ""
     embedding_api_base: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     similar_enabled: bool = True
+    image_quality: str = "standard"
 
 
 class ConfigUpdateRequest(BaseModel):
@@ -169,6 +170,7 @@ class ConfigUpdateRequest(BaseModel):
     embedding_api_key: Optional[str] = None
     embedding_api_base: Optional[str] = None
     similar_enabled: Optional[bool] = None
+    image_quality: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

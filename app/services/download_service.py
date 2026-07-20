@@ -1,13 +1,34 @@
 """下载管理 — async 状态管理 + 业务逻辑"""
 import asyncio
+import base64
 import json
 import re
 import time
 from pathlib import Path
 
 from app.repositories.comic_repo import ComicsMetadataRepo, ComicsDetailRepo
+from app.repositories.config_repo import ConfigRepo
 from app.repositories.download_repo import DownloadProgressRepo
 from app.core.file_utils import safe_filename, build_image_url, download_image_async
+
+
+def _to_original_url(fs: str, pv: str) -> str:
+    """将 CDN 缩略图 URL 转为原画 URL"""
+    if "tobeimg" not in pv:
+        return f"{fs}/static/{pv}"
+    m = re.search(r'/(aHR0[a-zA-Z0-9+/=]{20,})(?:$|[?/])', pv)
+    if m:
+        try:
+            b64 = m.group(1)
+            pad = len(b64) % 4
+            if pad:
+                b64 += "=" * (4 - pad)
+            decoded = base64.b64decode(b64).decode("utf-8")
+            if decoded.startswith("http"):
+                return decoded
+        except Exception:
+            pass
+    return f"{fs}/static/{pv}"
 
 
 class DownloadState:
@@ -183,6 +204,7 @@ class DownloadService:
         page_concurrency: int = 3,
         chapter_concurrency: int = 1,
         comic_concurrency: int = 1,
+        image_quality: str = "standard",
         state_mgr: DownloadStateManager = None,
     ) -> None:
         """主下载入口 — 作为 asyncio.Task 后台运行
@@ -347,6 +369,8 @@ class DownloadService:
                         if not fs or not pv:
                             return
                         img_url = f"{fs}/static/{pv}"
+                        if image_quality == "original":
+                            img_url = _to_original_url(fs, pv)
                         ext = Path(pv.split("?")[0]).suffix or ".jpg"
                         img_path = ep_folder / f"{pi + 1:03d}{ext}"
                         if img_path.exists() and img_path.stat().st_size > 0:

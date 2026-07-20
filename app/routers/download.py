@@ -55,6 +55,7 @@ async def api_download_start(
     page_conc = int(data.get("page_concurrency", cfg.get("page_concurrency", 3)))
     chapter_conc = int(data.get("chapter_concurrency", cfg.get("chapter_concurrency", 1)))
     comic_conc = int(data.get("comic_concurrency", cfg.get("comic_concurrency", 1)))
+    image_quality = str(data.get("image_quality", cfg.get("image_quality", "standard")))
 
     # 支持通过 _id 下载：从本地缓存找到对应序号
     if comic_ids and isinstance(comic_ids, list) and len(comic_ids) > 0:
@@ -78,14 +79,14 @@ async def api_download_start(
         task = asyncio.create_task(
             dl_svc.run_download(indices=indices, page_concurrency=page_conc,
                                 chapter_concurrency=chapter_conc, comic_concurrency=comic_conc,
-                                state_mgr=state_mgr)
+                                image_quality=image_quality, state_mgr=state_mgr)
         )
     else:
         await state_mgr.start(target)
         task = asyncio.create_task(
             dl_svc.run_download(target=target, page_concurrency=page_conc,
                                 chapter_concurrency=chapter_conc, comic_concurrency=comic_conc,
-                                state_mgr=state_mgr)
+                                image_quality=image_quality, state_mgr=state_mgr)
         )
     state_mgr._task = task
     return {"ok": True}

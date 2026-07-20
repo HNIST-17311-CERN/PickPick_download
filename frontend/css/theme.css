@@ -1,0 +1,505 @@
+/* PicaWeb 风格主题 */
+[data-theme="picaweb"],
+[data-theme="picaweb"] body,
+[data-theme="picaweb"] * {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif !important;
+}
+
+[data-theme="picaweb"] body {
+  background: #ffffff;
+  color: #333333;
+}
+
+[data-theme="picaweb"] .topbar {
+  background: #ED97B7;
+  border-bottom: 1px solid #ED97B7;
+}
+
+[data-theme="picaweb"] .topbar h1 {
+  color: #ffffff;
+}
+
+[data-theme="picaweb"] .topbar nav a {
+  color: rgba(255,255,255,.85);
+  border-color: transparent;
+}
+
+[data-theme="picaweb"] .topbar nav a:hover,
+[data-theme="picaweb"] .topbar nav a.active {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+}
+
+[data-theme="picaweb"] #tokenStatus {
+  color: rgba(255,255,255,.8) !important;
+}
+
+[data-theme="picaweb"] .search-box input {
+  background: rgba(255,255,255,.15);
+  border-color: rgba(255,255,255,.3);
+  color: #fff;
+}
+
+[data-theme="picaweb"] .search-box input::placeholder {
+  color: rgba(255,255,255,.5);
+}
+
+[data-theme="picaweb"] .search-box input:focus {
+  border-color: rgba(255,255,255,.6);
+}
+
+[data-theme="picaweb"] .container {
+  background: #ffffff;
+}
+
+[data-theme="picaweb"] .card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+[data-theme="picaweb"] .card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  transform: translateY(-2px);
+}
+
+[data-theme="picaweb"] .card .title {
+  color: #1a1a1a;
+}
+
+[data-theme="picaweb"] .card .meta {
+  color: #6b7280;
+}
+
+[data-theme="picaweb"] .chapter-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+[data-theme="picaweb"] .chapter-card:hover {
+  background: #f9fafb;
+}
+
+[data-theme="picaweb"] .chapter-card .name {
+  color: #1a1a1a;
+}
+
+[data-theme="picaweb"] .chapter-card .bar {
+  background: #e5e7eb;
+}
+
+[data-theme="picaweb"] .chapter-card.ch-none {
+  opacity: .6;
+  border-color: #e5e7eb;
+}
+
+[data-theme="picaweb"] .chapter-card.ch-done {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+[data-theme="picaweb"] .chapter-card.ch-partial {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+[data-theme="picaweb"] .detail-header h2 {
+  color: #111827;
+}
+
+[data-theme="picaweb"] .detail-header p {
+  color: #6b7280;
+}
+
+[data-theme="picaweb"] .desc {
+  color: #4b5563;
+}
+
+[data-theme="picaweb"] .toolbar select,
+[data-theme="picaweb"] .toolbar input {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .pager button {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .pager button:hover {
+  background: #f3f4f6;
+}
+
+[data-theme="picaweb"] .loading {
+  color: #9ca3af;
+}
+
+[data-theme="picaweb"] .empty {
+  color: #9ca3af;
+}
+
+[data-theme="picaweb"] .btn-back {
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+[data-theme="picaweb"] .btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .dl-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+[data-theme="picaweb"] .dl-card h3 {
+  color: #ED97B7;
+}
+
+[data-theme="picaweb"] .dl-card .dl-name {
+  color: #1a1a1a;
+}
+
+[data-theme="picaweb"] .dl-card .dl-stats {
+  color: #6b7280;
+}
+
+[data-theme="picaweb"] .dl-card .dl-bar {
+  background: #f3f4f6;
+}
+
+[data-theme="picaweb"] .zoom-bar button.on,
+[data-theme="picaweb"] .reader-toolbar .mode-switch button.on {
+  background: #ED97B7;
+  border-color: #ED97B7;
+}
+
+[data-theme="picaweb"] .flip-nav button {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .flip-nav button:hover {
+  background: #ED97B7;
+  border-color: #ED97B7;
+  color: #fff;
+}
+
+[data-theme="picaweb"] .hero-search {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #333;
+}
+
+[data-theme="picaweb"] .hero-search::placeholder {
+  color: #9ca3af;
+}
+
+/* ==== PicaWeb 主题：修复按钮/输入框边框 + 设置页 ==== */
+
+[data-theme="picaweb"] input[type="text"],
+[data-theme="picaweb"] input[type="password"],
+[data-theme="picaweb"] input[type="number"],
+[data-theme="picaweb"] textarea {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #333;
+}
+
+[data-theme="picaweb"] select {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #333;
+}
+
+/* 设置页 inline 样式覆盖 */
+[data-theme="picaweb"] #settingsForm input,
+[data-theme="picaweb"] #settingsForm select {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] #selTheme {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] #loginEmail,
+[data-theme="picaweb"] #loginPass {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] div[style*="background:#1a1a1a"] {
+  background: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme="picaweb"] div[style*="background:#1a1a1a"] h3,
+[data-theme="picaweb"] div[style*="background:#1a1a1a"] label {
+  color: #374151 !important;
+}
+
+[data-theme="picaweb"] label[style*="color:#aaa"] {
+  color: #6b7280 !important;
+}
+
+[data-theme="picaweb"] input[style*="background:#111"],
+[data-theme="picaweb"] input[style*="background:#1a1a1a"] {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] button[style*="background:#333"] {
+  background: #fff !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151 !important;
+}
+
+[data-theme="picaweb"] button[style*="color:#f87171"] {
+  color: #ef4444 !important;
+}
+
+[data-theme="picaweb"] span[style*="color:#666"] {
+  color: #6b7280 !important;
+}
+
+[data-theme="picaweb"] #vectorSync {
+  background: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme="picaweb"] #vectorSync h3 {
+  color: #333 !important;
+}
+
+[data-theme="picaweb"] .toolbar {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+}
+
+[data-theme="picaweb"] .reader-toolbar {
+  border-bottom-color: #e5e7eb;
+  background: #fff;
+}
+
+[data-theme="picaweb"] .reader-toolbar button,
+[data-theme="picaweb"] .reader-toolbar select {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .reader-toolbar button:hover {
+  background: #f3f4f6;
+}
+
+[data-theme="picaweb"] .page-jump input {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #333;
+}
+
+[data-theme="picaweb"] .rank-item {
+  border-bottom-color: #e5e7eb;
+}
+
+[data-theme="picaweb"] .rank-item:hover {
+  background: #f9fafb;
+}
+
+[data-theme="picaweb"] .rank-number {
+  color: #9ca3af;
+}
+
+[data-theme="picaweb"] .rank-tag {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+}
+
+[data-theme="picaweb"] .rank-title {
+  color: #111827 !important;
+}
+
+[data-theme="picaweb"] .rank-author {
+  color: #6b7280 !important;
+}
+
+[data-theme="picaweb"] .rank-stats span {
+  color: #9ca3af !important;
+}
+
+[data-theme="picaweb"] .tab-bar .btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #6b7280;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+[data-theme="picaweb"] .tab-bar .btn[style*="#60a5fa"] {
+  background: #ED97B7 !important;
+  border-color: #ED97B7 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(237,151,183,.3);
+}
+
+/* PicaWeb 风格：未选中按钮为白色描边，选中为粉色填充+浮空阴影 */
+[data-theme="picaweb"] .btn {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+[data-theme="picaweb"] button {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+/* 覆盖所有暗黑背景的 inline style */
+[data-theme="picaweb"] [style*="#1a1a1a"],
+[data-theme="picaweb"] [style*="#111"],
+[data-theme="picaweb"] [style*="background:#333"],
+[data-theme="picaweb"] [style*="background:#0f0f0f"],
+[data-theme="picaweb"] [style*="background:#1e1e1e"] {
+  background: #fff !important;
+}
+
+[data-theme="picaweb"] [style*="background:#0f0f0f"] {
+  background: #f9fafb !important;
+}
+
+[data-theme="picaweb"] [style*="color:#aaa"],
+[data-theme="picaweb"] [style*="color:#ddd"] {
+  color: #374151 !important;
+}
+
+[data-theme="picaweb"] [style*="color:#eee"] {
+  color: #1a1a1a !important;
+}
+
+[data-theme="picaweb"] [style*="color:#888"],
+[data-theme="picaweb"] [style*="color:#999"],
+[data-theme="picaweb"] [style*="color:#666"] {
+  color: #6b7280 !important;
+}
+
+[data-theme="picaweb"] [style*="border:1px solid #333"],
+[data-theme="picaweb"] [style*="border:1px solid #2a2a2a"] {
+  border-color: #d1d5db !important;
+}
+
+/* 保留粉色顶栏 */
+[data-theme="picaweb"] .topbar {
+  background: #ED97B7 !important;
+}
+
+/* 分类页 */
+[data-theme="picaweb"] .cat-chip {
+  background: #fff !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] .cat-chip:hover {
+  background: #f3f4f6 !important;
+  border-color: #9ca3af !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="picaweb"] .cat-chip.active {
+  background: #ED97B7 !important;
+  border-color: #ED97B7 !important;
+  color: #fff !important;
+}
+
+[data-theme="picaweb"] .source-tabs button {
+  background: #fff !important;
+  color: #6b7280 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="picaweb"] .source-tabs button.active {
+  background: #ED97B7 !important;
+  border-color: #ED97B7 !important;
+  color: #fff !important;
+}
+
+[data-theme="picaweb"] .cat-section h3 {
+  color: #374151 !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+[data-theme="picaweb"] .cat-section h3 .count {
+  color: #9ca3af !important;
+}
+
+[data-theme="picaweb"] #resultArea {
+  border-top-color: #ED97B7 !important;
+}
+
+[data-theme="picaweb"] .btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+[data-theme="picaweb"] .btn-primary {
+  background: #ED97B7;
+  color: #fff;
+  border-color: #ED97B7;
+  box-shadow: 0 2px 8px rgba(237,151,183,.35);
+}
+
+[data-theme="picaweb"] .btn-primary:hover {
+  background: #D46C8F;
+  border-color: #D46C8F;
+  box-shadow: 0 4px 12px rgba(237,151,183,.4);
+  transform: translateY(-1px);
+}
+
+[data-theme="picaweb"] .btn-back {
+  background: #fff;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+[data-theme="picaweb"] .btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .pager button {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 8px;
+}
+
+[data-theme="picaweb"] .pager button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+[data-theme="picaweb"] .toolbar button:not(.primary) {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+[data-theme="picaweb"] .toolbar button:hover:not(.primary) {
+  background: #f3f4f6;
+}
