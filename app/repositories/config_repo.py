@@ -25,4 +25,6 @@ class ConfigRepo:
             cfg["token"] = cfg["token"][:20] + "..."
         if cfg.get("nonce") and len(cfg["nonce"]) > 8:
             cfg["nonce"] = cfg["nonce"][:8] + "..."
+        if cfg.get("embedding_api_key") and len(cfg["embedding_api_key"]) > 8:
+            cfg["embedding_api_key"] = cfg["embedding_api_key"][:8] + "..."
         return cfg

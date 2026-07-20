@@ -9,3 +9,6 @@ max_retries: 30
 proxy: ""
 image_proxy_domain: "go2778.com"
 download_dir: "comics_detail"
+embedding_api_key: ""
+embedding_api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+similar_enabled: true

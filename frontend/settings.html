@@ -38,6 +38,8 @@ renderTopbar('settings.html');
     {key:'comic_concurrency',label:'漫画并发数',type:'number',ph:'1 (同时下几部)'},
     {key:'max_retries',label:'最大重试次数',type:'number',ph:'3'},
     {key:'download_dir',label:'下载目录',type:'text',ph:'comics_detail'},
+    {key:'embedding_api_key',label:'Embedding API Key',type:'password',ph:'sk-...'},
+    {key:'embedding_api_base',label:'Embedding API 地址',type:'text',ph:'https://dashscope.aliyuncs.com/compatible-mode/v1'},
   ];
 
   app.innerHTML = `
@@ -70,6 +72,10 @@ renderTopbar('settings.html');
         <input type="checkbox" id="chkBlur" ${blurOn?'checked':''} onchange="_saveState('blur',{on:this.checked});location.reload()">
         🌫 模糊模式（不加载图片，方便测试）
       </label>
+      <label style="color:#aaa;font-size:.85em;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:8px">
+        <input type="checkbox" id="chkSimilar" ${cfg.similar_enabled!==false?'checked':''} onchange="toggleSimilar(this.checked)">
+        🔗 启用相似推荐
+      </label>
     </div>
     <form id="settingsForm" style="max-width:640px">
       ${fields.map(f => `
@@ -84,6 +90,16 @@ renderTopbar('settings.html');
       <button type="submit" class="btn btn-primary" style="margin-top:8px">💾 保存设置</button>
       <span id="saveMsg" style="margin-left:12px;color:#4ade80;font-size:.85em;display:none">已保存</span>
     </form>
+
+    <div id="vectorSync" style="max-width:640px;margin-top:24px;background:#1a1a1a;border-radius:8px;padding:16px;border:1px solid #2a2a2a">
+      <h3 style="margin:0 0 12px;font-size:1em">🔗 相似推荐向量库</h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" id="btnVectorSync" class="btn" style="background:#333;color:#fbbf24;font-size:.85em;padding:8px 16px">🔄 更新向量数据库</button>
+        <button type="button" id="btnVectorCheck" class="btn" style="background:#333;color:#60a5fa;font-size:.85em;padding:8px 16px">📊 查看数量</button>
+        <button type="button" id="btnVectorClear" class="btn" style="background:#333;color:#f87171;font-size:.85em;padding:8px 16px">🗑 清除向量库</button>
+        <span id="vectorSyncMsg" style="font-size:.8em;color:#888"></span>
+      </div>
+    </div>
   `;
 
   document.getElementById('settingsForm').onsubmit = async (e) => {
@@ -101,6 +117,101 @@ renderTopbar('settings.html');
     msg.style.display = 'inline';
     setTimeout(() => msg.style.display = 'none', 2000);
   };
+
+async function toggleSimilar(on) {
+    await fetch(`${API}/config`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({similar_enabled: !!on})
+    });
+  }
+
+  document.getElementById('btnVectorCheck').onclick = async () => {
+    const msg = document.getElementById('vectorSyncMsg');
+    msg.innerHTML = '<span style="color:#888">查询中...</span>';
+    try {
+      const r = await fetch(`${API}/similar/stats`);
+      const j = await r.json();
+      msg.innerHTML = `<span style="color:#60a5fa">向量库共 ${j.vector_count} 部，本地共 ${j.local_count} 部</span>`;
+    } catch(e) {
+      msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+    }
+  };
+
+  document.getElementById('btnVectorClear').onclick = async () => {
+    if (!confirm('确定清除向量数据库？清除后需重新同步。')) return;
+    const msg = document.getElementById('vectorSyncMsg');
+    msg.innerHTML = '<span style="color:#fbbf24">清除中...</span>';
+    try {
+      const r = await fetch(`${API}/similar/clear`, {method:'POST'});
+      const j = await r.json();
+      if (j.ok) {
+        msg.innerHTML = '<span style="color:#4ade80">✓ 已清除</span>';
+      }
+    } catch(e) {
+      msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+    }
+  };
+
+  document.getElementById('btnVectorSync').onclick = async () => {
+    const btn = document.getElementById('btnVectorSync');
+    const msg = document.getElementById('vectorSyncMsg');
+    btn.disabled = true;
+    btn.textContent = '同步中...';
+    msg.innerHTML = '<span style="color:#fbbf24">正在同步...</span>';
+
+    const es = new EventSource(`${API}/similar/sync/stream`);
+    es.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      if (d.type === 'log') {
+        const text = d.text;
+        if (text.startsWith('  [')) {
+          msg.innerHTML = `<span style="color:#60a5fa;white-space:pre-wrap;font-family:monospace;font-size:0.85em">${text}</span>`;
+        } else {
+          msg.innerHTML = `<span style="color:#888">${text}</span>`;
+        }
+      } else if (d.type === 'result') {
+        msg.innerHTML = `<span style="color:#4ade80">✓ ${d.text}</span>`;
+      } else if (d.type === 'error') {
+        msg.innerHTML = `<span style="color:#f87171">✗ ${d.text}</span>`;
+      } else if (d.type === 'done') {
+        es.close();
+        btn.disabled = false;
+        btn.textContent = '🔄 更新向量数据库';
+      }
+    };
+    es.onerror = () => {
+      es.close();
+      btn.disabled = false;
+      btn.textContent = '🔄 更新向量数据库';
+    };
+
+    try {
+      const r = await fetch(`${API}/similar/sync`, {method:'POST'});
+      const j = await r.json();
+      if (!j.ok) {
+        msg.innerHTML = `<span style="color:#f87171">✗ ${j.detail || '同步失败'}</span>`;
+        es.close();
+        btn.disabled = false;
+        btn.textContent = '🔄 更新向量数据库';
+      }
+    } catch(e) {
+      msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+      es.close();
+      btn.disabled = false;
+      btn.textContent = '🔄 更新向量数据库';
+    }
+  };
+
+  try {
+    const sr = await fetch(`${API}/similar/stats`);
+    const sj = await sr.json();
+    const m = document.getElementById('vectorSyncMsg');
+    if (sj.vector_count > 0) {
+      m.innerHTML = `<span style="color:#4ade80">已索引 ${sj.vector_count} 部</span>`;
+    } else {
+      m.innerHTML = '<span style="color:#fbbf24">未初始化，请点击更新</span>';
+    }
+  } catch(e) {}
 
   // 目录选择器按钮
   document.querySelectorAll('.btnPickDir').forEach(btn => {

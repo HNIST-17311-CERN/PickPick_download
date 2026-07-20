@@ -26,6 +26,7 @@ class ConfigService:
         for key in [
             "proxy", "page_concurrency", "chapter_concurrency", "comic_concurrency",
             "max_retries", "api_base", "image_proxy_domain", "download_dir",
+            "embedding_api_key", "embedding_api_base", "similar_enabled",
         ]:
             if key in data and data[key] is not None:
                 cfg[key] = data[key]

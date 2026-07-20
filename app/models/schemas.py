@@ -150,6 +150,9 @@ class ConfigResponse(BaseModel):
     max_retries: int = 30
     download_dir: str = "comics_detail"
     image_proxy_domain: str = ""
+    embedding_api_key: str = ""
+    embedding_api_base: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    similar_enabled: bool = True
 
 
 class ConfigUpdateRequest(BaseModel):
@@ -163,6 +166,9 @@ class ConfigUpdateRequest(BaseModel):
     max_retries: Optional[int] = None
     download_dir: Optional[str] = None
     image_proxy_domain: Optional[str] = None
+    embedding_api_key: Optional[str] = None
+    embedding_api_base: Optional[str] = None
+    similar_enabled: Optional[bool] = None
 
 
 class LoginRequest(BaseModel):

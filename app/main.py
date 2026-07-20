@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, Response
 
 from app.services.download_service import DownloadStateManager
 from app.services.config_service import get_detail_dir
-from app.routers import comics, favorites, download, config, auth, local_comics, search, categories
+from app.routers import comics, favorites, download, config, auth, local_comics, search, categories, similar
 
 
 def _bundle_dir() -> Path:
@@ -55,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(local_comics.router)
     app.include_router(search.router)
     app.include_router(categories.router)
+    app.include_router(similar.router)
 
     # 静态文件挂载
     if FRONTEND_DIR.exists():
