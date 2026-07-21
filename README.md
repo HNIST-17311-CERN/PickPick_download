@@ -6,6 +6,8 @@
 
 ### 方式一：直接下载 EXE（无需 Python）
 
+> **⚠ 注意：Release 版本过低，不建议使用，建议使用源码方式运行。**
+
 从 [Releases](https://github.com/HNIST-17311-CERN/PickPick_download/releases) 下载 `PicaScraper.exe`，双击运行，浏览器访问 `http://localhost:8000`。
 
 首次运行会自动创建 `config.yaml`，在设置页填入账号或 token 即可使用。漫画数据和配置文件都会保存在 exe 所在目录。
