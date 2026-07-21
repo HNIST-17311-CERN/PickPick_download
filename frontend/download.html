@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>哔咔漫画 - 下载管理</title>
+<title>PicaDownload - 下载管理</title>
 <link rel="stylesheet" href="css/theme.css?v=4">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📚 哔咔漫画</h1>
+  <h1><span style="color:#000;font-weight:800;font-size:1.4em">Pica</span><span style="color:#fff;font-weight:800;font-size:1.4em">Download</span></h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
   <span id="searchWrap" style="display:flex;align-items:center"></span>
@@ -243,11 +243,11 @@ async function renderDownload() {
     : `${queue.total} 部待下载 · ${queue.items.filter(i=>!i.has_detail).length} 部缺详情`;
 
   app.innerHTML = `
-    <h2 style="margin-bottom:4px">📥 下载管理</h2>
+    <h2 style="margin-bottom:4px">下载管理</h2>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
       <p style="color:#888;font-size:.85em;margin:0">${queueSummary}</p>
-      <button id="btnSyncFav" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32h128c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C80.1 115 65.2 140.5 55.7 167.7c-5.1 14.6-18.4 24.2-33.8 22.5s-26.3-13.7-24-28.8c8.4-46.6 30.7-89.1 65.3-123.7C160.7-59.8 370.2-59.8 467.8 37.8L481.4 64H432c-17.7 0-32 14.3-32 32s14.3 32 32 32z" fill="currentColor"/></svg>同步收藏</button>
-      <button id="btnRefreshQue" class="btn" style="background:#333;color:#ddd;font-size:.75em;padding:4px 10px">🔍 刷新</button>
+      <button id="btnSyncFav" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>同步收藏</button>
+      <button id="btnRefreshQue" class="btn" style="background:#333;color:#ddd;font-size:.75em;padding:4px 10px">刷新</button>
       ${!doneTotal ? `
         <button id="btnDlAllQue" class="btn btn-primary" style="font-size:.8em;padding:4px 14px;font-weight:600">⬇ 全部下载</button>
         <select id="dlTopN" style="padding:4px 8px;border:1px solid #333;border-radius:6px;background:#111;color:#ddd;font-size:.75em">

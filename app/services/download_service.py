@@ -277,6 +277,7 @@ class DownloadService:
                             "epsCount": comic_data.get("epsCount"),
                             "pagesCount": comic_data.get("pagesCount"),
                             "thumb": comic_data.get("thumb"),
+                            "image_quality": image_quality,
                         }
                         self._detail.save_metadata(folder, meta)
                         thumb = comic_data.get("thumb", {})

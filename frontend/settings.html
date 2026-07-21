@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>哔咔漫画 - 设置</title>
+<title>PicaDownload - 设置</title>
 <link rel="stylesheet" href="css/theme.css?v=4">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📚 哔咔漫画</h1>
+  <h1><span style="color:#000;font-weight:800;font-size:1.4em">Pica</span><span style="color:#fff;font-weight:800;font-size:1.4em">Download</span></h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
   <span id="searchWrap" style="display:flex;align-items:center"></span>
@@ -44,11 +44,11 @@ renderTopbar('settings.html');
   ];
 
   app.innerHTML = `
-    <h2 style="margin-bottom:20px">⚙️ 设置</h2>
+    <h2 style="margin-bottom:20px"><svg style="width:1.2em;height:1.2em;vertical-align:-.2em;margin-right:4px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="#fff"/></svg>设置</h2>
 
     <!-- 登录区域 -->
     <div style="max-width:640px;background:#1a1a1a;border-radius:8px;padding:16px;margin-bottom:24px;border:1px solid #2a2a2a">
-      <h3 style="margin:0 0 12px;font-size:1em">🔐 账号登录</h3>
+      <h3 style="margin:0 0 12px;font-size:1em">账号登录</h3>
       <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
         <div style="flex:1;min-width:140px">
           <label style="color:#aaa;font-size:.75em">邮箱</label>
@@ -75,7 +75,7 @@ renderTopbar('settings.html');
       </label>
       <label style="color:#aaa;font-size:.85em;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:8px">
         <input type="checkbox" id="chkSimilar" ${cfg.similar_enabled!==false?'checked':''} onchange="toggleSimilar(this.checked)">
-        🔗 启用相似推荐
+        启用相似推荐
       </label>
       <div style="margin-top:12px">
         <label style="color:#aaa;font-size:.85em">🎨 界面风格</label>
@@ -86,7 +86,7 @@ renderTopbar('settings.html');
       </div>
       <div style="margin-top:12px">
         <label style="color:#aaa;font-size:.85em">🖼 图片画质</label>
-        <select id="selQuality" onchange="saveQuality(this.value)" style="width:100%;margin-top:4px;padding:8px 12px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#ddd;font-size:.9em">
+        <select id="selQuality" style="width:100%;margin-top:4px;padding:8px 12px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#ddd;font-size:.9em">
           <option value="standard">标准 (缩略图质量)</option>
           <option value="original">原画 (原始质量)</option>
         </select>
@@ -98,7 +98,7 @@ renderTopbar('settings.html');
           <label style="display:block;color:#aaa;font-size:.85em;margin-bottom:4px">${f.label}</label>
           <input name="${f.key}" type="${f.type}" placeholder="${f.ph}" value="${cfg[f.key]||''}"
             style="width:100%;padding:10px 12px;border:1px solid #333;border-radius:6px;background:#1a1a1a;color:#ddd;font-size:.9em">
-          ${f.key === 'token' ? '<div style="margin-top:6px;display:flex;gap:6px;align-items:center"><button type="button" id="btnTestToken" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:6px 14px">🔑 检查</button><button type="button" id="btnRefreshToken" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:6px 14px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>刷新</button><span id="tokenResult" style="margin-left:6px;font-size:.8em"></span></div>' : ''}
+          ${f.key === 'token' ? '<div style="margin-top:6px;display:flex;gap:6px;align-items:center"><button type="button" id="btnTestToken" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:6px 14px">🔑 检查</button><button type="button" id="btnRefreshToken" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:6px 14px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>刷新</button><span id="tokenResult" style="margin-left:6px;font-size:.8em"></span></div>' : ''}
           ${f.key === 'download_dir' ? '<button type="button" class="btnPickDir btn" style="background:#333;color:#ddd;margin-top:6px;font-size:.8em;padding:6px 14px" data-target="'+f.key+'">📂 浏览...</button>' : ''}
         </div>
       `).join('')}
@@ -107,10 +107,10 @@ renderTopbar('settings.html');
     </form>
 
     <div id="vectorSync" style="max-width:640px;margin-top:24px;background:#1a1a1a;border-radius:8px;padding:16px;border:1px solid #2a2a2a">
-      <h3 style="margin:0 0 12px;font-size:1em">🔗 相似推荐向量库</h3>
+      <h3 style="margin:0 0 12px;font-size:1em">相似推荐向量库</h3>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button type="button" id="btnVectorSync" class="btn" style="background:#333;color:#fbbf24;font-size:.85em;padding:8px 16px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>更新向量数据库</button>
-        <button type="button" id="btnVectorCheck" class="btn" style="background:#333;color:#60a5fa;font-size:.85em;padding:8px 16px">📊 查看数量</button>
+        <button type="button" id="btnVectorSync" class="btn" style="background:#333;color:#fbbf24;font-size:.85em;padding:8px 16px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>更新向量数据库</button>
+        <button type="button" id="btnVectorCheck" class="btn" style="background:#333;color:#60a5fa;font-size:.85em;padding:8px 16px"><svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 576 512"><path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z" fill="currentColor"/></svg>查看数量</button>
         <button type="button" id="btnVectorClear" class="btn" style="background:#333;color:#f87171;font-size:.85em;padding:8px 16px">🗑 清除向量库</button>
         <span id="vectorSyncMsg" style="font-size:.8em;color:#888"></span>
       </div>
@@ -148,6 +148,7 @@ async function toggleSimilar(on) {
   const selQuality = document.getElementById('selQuality');
   if (selQuality) {
     selQuality.value = cfg.image_quality || 'standard';
+    selQuality.onchange = () => { fetch(`${API}/config`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({image_quality: selQuality.value})}); };
   }
 
   async function saveQuality(val) {
@@ -208,13 +209,13 @@ async function toggleSimilar(on) {
       } else if (d.type === 'done') {
         es.close();
         btn.disabled = false;
-        btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>更新向量数据库';
+        btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>更新向量数据库';
       }
     };
     es.onerror = () => {
       es.close();
       btn.disabled = false;
-      btn.textContent = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>更新向量数据库';
+      btn.textContent = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>更新向量数据库';
     };
 
     try {
@@ -224,13 +225,13 @@ async function toggleSimilar(on) {
         msg.innerHTML = `<span style="color:#f87171">✗ ${j.detail || '同步失败'}</span>`;
         es.close();
         btn.disabled = false;
-        btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>更新向量数据库';
+        btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>更新向量数据库';
       }
     } catch(e) {
       msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
       es.close();
       btn.disabled = false;
-      btn.textContent = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" fill="currentColor"/></svg>更新向量数据库';
+      btn.textContent = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:2px" viewBox="0 0 512 512"><path d="M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z" fill="currentColor"/></svg>更新向量数据库';
     }
   };
 
@@ -356,7 +357,7 @@ async function toggleSimilar(on) {
       res.innerHTML = `<span style=\"color:#f87171\">请求失败: ${e.message}</span>`;
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<svg style=\"width:14px;height:14px;vertical-align:-2px;margin-right:2px\" viewBox=\"0 0 512 512\"><path d=\"M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H352c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32s-32 14.3-32 32v35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V432c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H160c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z\" fill=\"currentColor\"/></svg>\u5237\u65B0';
+      btn.innerHTML = '<svg style=\"width:14px;height:14px;vertical-align:-2px;margin-right:2px\" viewBox=\"0 0 512 512\"><path d=\"M504 255.531c.253 136.64-111.18 248.372-247.82 248.468-59.015.042-113.223-20.53-155.822-54.911-11.077-8.94-11.905-25.541-1.839-35.607l11.267-11.267c8.609-8.609 22.353-9.551 31.891-1.984C173.062 425.135 212.781 440 256 440c101.705 0 184-82.311 184-184 0-101.705-82.311-184-184-184-48.814 0-93.149 18.969-126.068 49.932l50.754 50.754c10.08 10.08 2.941 27.314-11.313 27.314H24c-8.837 0-16-7.163-16-16V38.627c0-14.254 17.234-21.393 27.314-11.314l49.372 49.372C129.209 34.136 189.552 8 256 8c136.81 0 247.747 110.78 248 247.531zm-180.912 78.784l9.823-12.63c8.138-10.463 6.253-25.542-4.21-33.679L288 256.349V152c0-13.255-10.745-24-24-24h-16c-13.255 0-24 10.745-24 24v135.651l65.409 50.874c10.463 8.137 25.541 6.253 33.679-4.21z\" fill=\"currentColor\"/></svg>\u5237\u65B0';
     }
   };
 

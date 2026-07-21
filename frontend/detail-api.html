@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>哔咔漫画 - 详情</title>
+<title>PicaDownload - 详情</title>
 <link rel="stylesheet" href="css/theme.css?v=4">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📚 哔咔漫画</h1>
+  <h1><span style="color:#000;font-weight:800;font-size:1.4em">Pica</span><span style="color:#fff;font-weight:800;font-size:1.4em">Download</span></h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
   <span id="searchWrap" style="display:flex;align-items:center"></span>
@@ -24,12 +24,14 @@
 <script src="js/common.js?v=19"></script>
 <script>
 const app = document.getElementById('app');
+const _favSet = new Set(JSON.parse(sessionStorage.getItem('favSet') || '[]'));
 renderTopbar('');
 
 async function renderDetail(comicId) {
   try {
     const data = await fetchJSON(`${API}/comics/${encodeURIComponent(comicId)}`);
     const m = data.meta || {};
+    if (m._id) { fetch(API+'/mark-seen', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({comic_id: m._id})}); }
     const chs = data.chapters || [];
     const cover = data.cover_url || '';
 
@@ -40,13 +42,14 @@ async function renderDetail(comicId) {
         <div class="meta">
           <h2>${m.title || '?'}</h2>
           <p>作者: <a href="search.html?keyword=${encodeURIComponent(m.author||'')}" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${m.author||'?'}</a> | ${m.chineseTeam ? '汉化: '+m.chineseTeam+' | ' : ''}${m.status||'?'}</p>
-          <p>${m.pagesCount||0}P | ${m.epsCount||0}话 | 👁 ${(m.totalViews||0).toLocaleString()} | ❤️ ${(m.totalLikes||0).toLocaleString()}</p>
+          <p>${m.pagesCount||0}P | ${m.epsCount||0}话 | <svg style="width:1em;height:1em;vertical-align:-.15em;margin-right:1px" viewBox="0 0 576 512"><path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z" fill="currentColor"/></svg> ${(m.totalViews||0).toLocaleString()} | ❤️ ${(m.totalLikes||0).toLocaleString()}</p>
           ${m.categories ? `<p>分类: ${m.categories.map(c => '<a href="search.html?keyword='+encodeURIComponent(c)+'" style="color:#60a5fa;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+c+'</a>').join(', ')}</p>` : ''}
           ${m.tags ? `<p>标签: ${m.tags.slice(0,15).map(t => '<a href="search.html?keyword='+encodeURIComponent(t)+'" style="color:#94a3b8;text-decoration:none" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t+'</a>').join(', ')}</p>` : ''}
           <div style="display:flex;gap:8px;margin-top:8px">
             ${data.is_downloaded
               ? `<a href="detail.html?folder=${encodeURIComponent(data.local_folder)}" class="btn btn-primary" style="text-decoration:none">📖 本地阅读</a><button class="btn" style="background:#2a2a2a;color:#555;cursor:not-allowed" disabled>⬇ 已下载</button>`
               : '<button id="btnDownload" class="btn btn-primary">⬇ 下载</button>'}
+            ${!data.is_favourited && !_favSet.has(m._id) ? '<button id="btnFav" class="btn" style="background:#e11d48;color:#fff">❤️ 收藏</button>' : ''}
           </div>
         </div>
       </div>
@@ -70,6 +73,21 @@ async function renderDetail(comicId) {
     `;
 
     const btnDownload = document.getElementById('btnDownload');
+    const btnFav = document.getElementById('btnFav');
+    if (btnFav) {
+      btnFav.onclick = async () => {
+        btnFav.disabled = true;
+        btnFav.textContent = '收藏中...';
+        try {
+          const r = await fetch(API + '/favourite', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({comic_id: m._id})});
+          if (r.ok) {
+            _favSet.add(m._id);
+            sessionStorage.setItem('favSet', JSON.stringify([..._favSet]));
+            btnFav.textContent = '❤️ 已收藏'; btnFav.style.background = '#333'; btnFav.style.color = '#4ade80';
+          } else { alert('收藏失败'); btnFav.disabled = false; btnFav.textContent = '❤️ 收藏'; }
+        } catch(e) { alert('请求失败: ' + e.message); btnFav.disabled = false; btnFav.textContent = '❤️ 收藏'; }
+      };
+    }
     if (btnDownload) {
       btnDownload.onclick = async function() {
       var idx = data.comic_idx;

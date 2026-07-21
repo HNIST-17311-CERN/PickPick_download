@@ -1,4 +1,4 @@
-# 哔咔漫画爬虫
+# PicaDownload
 
 通过逆向工程的 API 签名算法调用哔咔漫画 Web API，实现收藏列表同步、漫画详情获取、图片批量下载和本地浏览。
 
@@ -11,24 +11,28 @@
 
 ## 功能
 
-- **收藏同步** — 从 Pica API 实时拉取收藏列表，支持增量新增检测
+- **收藏同步** — 从 Pica API 实时拉取收藏列表，支持增量新增检测和 NEW 标签
+- **一键收藏** — 排行榜等页面直接收藏漫画到账号
 - **批量下载** — 三级并发（漫画/章节/图片），断点续传，自动跳过已下载
-- **收藏页直接阅读** — 已下载漫画的详情页直接显示"本地阅读"按钮，无需二次跳转
+- **画质选择** — 支持标准/原画两种画质，本地详情页显示下载画质
 - **本地浏览** — 网格视图、详情页、分类筛选、搜索、滚动/翻页阅读器
 - **进度管理** — 实时下载日志（SSE 推送），全局+章节级双层进度追踪
+- **批量管理** — 整页全选 / 所有全选，批量导出删除
+- **排行榜** — Pica API 排行榜浏览（H24/D7/D30）
+- **相似推荐** — 基于向量库的语义相似漫画推荐
 - **导入导出** — 漫画打包 ZIP 导出/导入
-- **本地扫描** — 扫描任意文件夹导入本地漫画到 SQLite 数据库
 
 ## 使用
 
 | 页面 | 功能 |
 |------|------|
-| 收藏页 | API 实时收藏列表，分类/状态下拉筛选，已下载直接跳阅读 |
-| 下载页 | 待下载队列，勾选批量下载，实时 SSE 日志 |
-| 本地浏览 | 已下载漫画网格，搜索和分类过滤 |
-| 分类页 | 按标签分组浏览全部已下载漫画 |
+| 收藏页 | API 实时收藏列表，分类/状态下拉筛选，NEW 标签，页面跳转，标记已查看 |
+| 下载页 | 待下载队列，已解析/缺详情状态，勾选批量下载，实时 SSE 日志 |
+| 本地浏览 | 已下载漫画网格，分页浏览，批量模式（整页全选/所有全选） |
+| 分类页 | 收藏/本地方切换，按标签分组浏览 |
 | 搜索页 | 三源搜索（收藏 + 本地 + 导入） |
-| 设置页 | Token/Nonce 配置，并发数调整，邮箱登录，下载目录配置 |
+| 排行榜 | H24/D7/D30 排行榜，支持一键收藏 |
+| 设置页 | Token/Nonce 配置，邮箱登录，画质选择，并发数调整，向量库管理 |
 
 典型流程：**设置页配置凭证 → 收藏页刷新同步 → 下载页勾选启动 → 本地浏览阅读**
 
@@ -37,13 +41,14 @@
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | `token` / `nonce` | — | API 凭证，可通过邮箱登录自动获取 |
-| `download_dir` | `comics_detail` | 漫画下载目录，修改后需重启 |
+| `download_dir` | `comics_detail` | 漫画下载目录 |
 | `page_concurrency` | 3 | 图片并发下载数 |
 | `chapter_concurrency` | 1 | 章节并发数 |
 | `comic_concurrency` | 1 | 漫画并发数 |
 | `max_retries` | 30 | API 请求最大重试次数 |
 | `request_delay` | 1.5 | API 请求间隔（秒） |
 | `proxy` | — | HTTP 代理地址 |
+| `image_quality` | `standard` | 图片画质（standard / original） |
 
 ## 项目结构
 
@@ -55,7 +60,7 @@
 │   ├── main.py                # 应用工厂 + 路由注册
 │   ├── dependencies.py        # 依赖注入容器
 │   ├── core/                  # 签名算法、API客户端、文件工具、数据库
-│   ├── services/              # 下载引擎、漫画浏览、收藏、认证、配置、导出
+│   ├── services/              # 下载引擎、漫画浏览、收藏、认证、配置
 │   ├── routers/               # REST API 端点
 │   ├── repositories/          # 数据访问（JSON + SQLite）
 │   └── models/                # Pydantic 请求/响应模型
@@ -65,9 +70,10 @@
 │   ├── download.html          # 下载管理（SSE 实时日志）
 │   ├── settings.html          # 设置页
 │   ├── detail.html            # 本地漫画详情
-│   ├── detail-api.html        # API 漫画详情（已下载→显示本地阅读入口）
+│   ├── detail-api.html        # API 漫画详情（收藏按钮/本地阅读入口）
 │   ├── reader.html            # 图片阅读器
 │   ├── categories.html        # 分类页
+│   ├── leaderboard.html       # 排行榜页
 │   └── search.html            # 搜索页
 └── docs/                      # 文档
 ```
@@ -82,6 +88,8 @@
 | DELETE | `/api/comics/{folder}` | 删除漫画 |
 | GET | `/api/favorites` | 实时收藏列表（分类/状态筛选） |
 | POST | `/api/favorites/refresh` | 从 API 同步收藏 |
+| POST | `/api/favourite` | 收藏漫画 |
+| POST | `/api/mark-seen` | 标记已查看（全部或单个） |
 | GET | `/api/download/queue` | 待下载队列 |
 | POST | `/api/download/start` | 启动下载 |
 | POST | `/api/download/stop` | 停止下载 |
@@ -92,9 +100,10 @@
 | POST | `/api/logout` | 退出登录 |
 | GET | `/api/search` | 三源搜索 |
 | GET | `/api/categories/full` | 分类分组 |
+| GET | `/api/leaderboard` | 排行榜 |
+| GET | `/api/similar/{folder}` | 相似推荐 |
 | POST | `/api/comics/export` | 导出 ZIP |
 | POST | `/api/comics/import` | 导入 ZIP |
-| GET/POST/DELETE | `/api/local/*` | 本地导入漫画 CRUD |
 
 ## 技术要点
 
@@ -104,7 +113,6 @@
 - **三层并发**：漫画级/章节级/图片级 worker pool，协程+队列控制并发数
 - **断点续传**：文件存在 + 大小 > 0 判重，chapters.json 记录每话进度
 - **SSE 推送**：下载日志实时推送到前端，支持心跳和断线重连
-- **单文件分发**：PyInstaller 打包为独立 EXE，无需安装 Python
 
 ## 免责声明
 

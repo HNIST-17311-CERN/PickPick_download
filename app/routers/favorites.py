@@ -1,5 +1,5 @@
 """收藏路由"""
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Body
 
 from app.dependencies import get_favorite_service, get_comic_service
 from app.services.favorite_service import FavoriteService
@@ -47,6 +47,32 @@ async def api_categories(
 @router.post("/mark-seen")
 def api_mark_seen(
     fav_svc: FavoriteService = Depends(get_favorite_service),
+    comic_id: str | None = Body(None, embed=True),
 ):
-    fav_svc.mark_seen()
+    if comic_id:
+        fav_svc.mark_one_seen(comic_id)
+    else:
+        fav_svc.mark_seen()
     return {"ok": True}
+
+
+@router.post("/favourite")
+async def api_favourite(
+    comic_id: str = Body(..., embed=True),
+):
+    from app.core.pica_client import AsyncPicaClient
+    from app.repositories.config_repo import ConfigRepo
+
+    cfg = ConfigRepo().read()
+    if not cfg.get("token"):
+        raise HTTPException(400, "请先登录")
+
+    client = AsyncPicaClient(cfg)
+    try:
+        result = await client.favourite_comic(comic_id)
+        print(f"[Favourite] comic_id={comic_id}, result={result.get('code')}, msg={result.get('message', '')}")
+        if result.get("code") != 200:
+            raise HTTPException(400, result.get("message", "收藏失败"))
+    finally:
+        await client.close()
+    return {"ok": True, "comic_id": comic_id}

@@ -118,3 +118,15 @@ class LastSeenRepo:
             ),
             encoding="utf-8",
         )
+
+    def mark_one_seen(self, comic_id: str) -> None:
+        seen = list(self.get_seen_ids())
+        if comic_id not in seen:
+            seen.append(comic_id)
+        self._path.write_text(
+            json.dumps(
+                {"ids": seen, "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S")},
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )

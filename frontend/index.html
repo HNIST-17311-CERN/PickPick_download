@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>哔咔漫画 - 本地浏览</title>
+<title>PicaDownload - 本地浏览</title>
 <link rel="stylesheet" href="css/theme.css?v=4">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📚 哔咔漫画</h1>
+  <h1><span style="color:#000;font-weight:800;font-size:1.4em">Pica</span><span style="color:#fff;font-weight:800;font-size:1.4em">Download</span></h1>
   <nav id="topnav"></nav>
   <span style="flex:1"></span>
   <span id="searchWrap" style="display:flex;align-items:center"></span>
@@ -75,7 +75,8 @@ async function renderGrid() {
           <input type="checkbox" id="chkBatch" ${batchMode?'checked':''}> 批量
         </label>
         ${batchMode ? `
-          <button id="btnSelAll" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px">全选</button>
+          <button id="btnSelAll" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px">整页全选</button>
+          <button id="btnSelPageAll" class="btn" style="background:#333;color:#fbbf24;font-size:.8em;padding:4px 10px">所有全选</button>
           <button id="btnSelNone" class="btn" style="background:#333;color:#ddd;font-size:.8em;padding:4px 10px">全不选</button>
           <button id="btnExport" class="btn" style="background:#2563eb;color:#fff;font-size:.8em;padding:4px 10px">${fmtSelected(selected)}</button>
           <button id="btnBatchDel" class="btn" style="background:#991b1b;color:#f87171;font-size:.8em;padding:4px 10px">🗑 删除所选</button>
@@ -128,6 +129,13 @@ async function renderGrid() {
       document.getElementById('btnSelAll').onclick = () => {
         document.querySelectorAll('.batch-check').forEach(cb => { cb.checked = true; selected.add(cb.dataset.folder); });
         sessionStorage.setItem('batchSelected', JSON.stringify([...selected]));
+        document.getElementById('btnExport').innerHTML = fmtSelected(selected);
+      };
+      document.getElementById('btnSelPageAll').onclick = async () => {
+        const all = await fetchJSON(`${API}/comics?page=1&per_page=9999`);
+        all.items.forEach(item => selected.add(item.folder));
+        sessionStorage.setItem('batchSelected', JSON.stringify([...selected]));
+        document.querySelectorAll('.batch-check').forEach(cb => { cb.checked = selected.has(cb.dataset.folder); });
         document.getElementById('btnExport').innerHTML = fmtSelected(selected);
       };
       document.getElementById('btnSelNone').onclick = () => {

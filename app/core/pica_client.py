@@ -129,6 +129,11 @@ class AsyncPicaClient:
             page += 1
         return comics
 
+    async def favourite_comic(self, comic_id: str) -> dict:
+        return await self._request(
+            f"/comics/{comic_id}/favourite", method="POST"
+        )
+
     # ==== 漫画详情 ====
 
     async def get_comic_info(self, comic_id: str) -> dict:

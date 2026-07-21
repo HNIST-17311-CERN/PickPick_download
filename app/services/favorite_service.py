@@ -68,31 +68,24 @@ class FavoriteService:
             return {"items": [], "total": 0, "new_count": 0, "page": page, "per_page": per_page, "categories": []}
 
         need_filter = bool(categories or status)
+        api_total = 0
         if need_filter:
             all_comics = self._comic.load_all()
-            total = len(all_comics)
+            api_total = len(all_comics)
             id_map = self._build_id_map() if DETAIL_DIR.exists() else {}
         else:
-            fetch_limit = max(per_page, 60)
             client = AsyncPicaClient(cfg)
             try:
-                all_comics = []
-                cp = page
-                while len(all_comics) < fetch_limit:
-                    data = await client.get_favourites(page=cp, sort=sort, limit=min(40, fetch_limit - len(all_comics)))
-                    pd = data.get("data", {}).get("comics", {})
-                    batch = pd.get("docs", [])
-                    total = pd.get("total", 0)
-                    pages_total = pd.get("pages", 1)
-                    all_comics.extend(batch)
-                    if cp >= pages_total or not batch:
-                        break
-                    cp += 1
+                data = await client.get_favourites(page=page, sort=sort, limit=per_page)
+                pd = data.get("data", {}).get("comics", {})
+                all_comics = pd.get("docs", [])
+                api_total = pd.get("total", 0)
             finally:
                 await client.close()
             id_map = self._build_id_map() if DETAIL_DIR.exists() else {}
 
         items = []
+        new_ids = self._seen.get_new_ids({c.get("_id", "") for c in all_comics})
         for i, c in enumerate(all_comics):
             cid = c.get("_id", "")
             scan = id_map.get(cid)
@@ -134,7 +127,7 @@ class FavoriteService:
                 "categories": c.get("categories", []),
                 "epsCount": c.get("epsCount", 0),
                 "dl_status": dl_status,
-                "is_new": False,
+                "is_new": cid in new_ids,
                 "folder": scan["folder"] if scan else None,
                 "cover_url": cover_url,
                 "has_cover": bool(cover_url),
@@ -144,9 +137,15 @@ class FavoriteService:
             })
 
         # 本地分页
-        filtered_total = len(items)
-        start = (page - 1) * per_page
-        paged_items = items[start:start + per_page]
+        if need_filter:
+            filtered_total = len(items)
+            new_count = sum(1 for it in items if it["is_new"])
+            start = (page - 1) * per_page
+            paged_items = items[start:start + per_page]
+        else:
+            filtered_total = api_total
+            new_count = sum(1 for it in items if it["is_new"])
+            paged_items = items
 
         # 收集所有分类
         all_cats = set()
@@ -157,7 +156,7 @@ class FavoriteService:
         return {
             "items": paged_items,
             "total": filtered_total,
-            "new_count": 0,
+            "new_count": new_count,
             "page": page,
             "per_page": per_page,
             "categories": sorted(all_cats),
@@ -186,6 +185,9 @@ class FavoriteService:
         comics = self._comic.load_all()
         ids = [c["_id"] for c in comics if "_id" in c]
         self._seen.mark_all_seen(ids)
+
+    def mark_one_seen(self, comic_id: str) -> None:
+        self._seen.mark_one_seen(comic_id)
 
     def get_new_ids(self) -> set[str]:
         current = self._comic.get_all_ids()

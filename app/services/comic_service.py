@@ -184,6 +184,7 @@ class ComicService:
                 "folder": f"idx_{idx + 1}",
                 "comic_idx": idx + 1,
                 "from_api": True,
+                "is_favourited": True,
                 "local_folder": local_folder.name if local_folder else None,
                 "is_downloaded": local_folder is not None,
                 "meta": {
@@ -215,12 +216,14 @@ class ComicService:
         """直接用漫画 _id 从 Pica API 获取详情，同时合并本地下载状态"""
         from app.core.pica_client import AsyncPicaClient
         from app.repositories.config_repo import ConfigRepo
+        from app.repositories.comic_repo import ComicsMetadataRepo
 
         cfg = ConfigRepo().read()
         if not cfg.get("token") or not comic_id:
             return None
 
         local_folder, local_chapters = self._find_local_by_id(comic_id)
+        is_fav = comic_id in ComicsMetadataRepo().get_all_ids()
 
         client = AsyncPicaClient(cfg)
         try:
@@ -260,6 +263,7 @@ class ComicService:
             return {
                 "folder": f"_id-{comic_id}",
                 "from_api": True,
+                "is_favourited": is_fav,
                 "local_folder": local_folder.name if local_folder else None,
                 "is_downloaded": local_folder is not None,
                 "meta": {
