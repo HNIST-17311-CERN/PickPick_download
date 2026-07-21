@@ -1,15 +1,19 @@
 api_base: "https://picaapi.go2778.com"
 token: ""
 nonce: ""
-page_concurrency: 3
+page_concurrency: 80
 chapter_concurrency: 1
 comic_concurrency: 1
 request_delay: 1.5
-max_retries: 30
+max_retries: 3
 proxy: ""
 image_proxy_domain: "go2778.com"
 download_dir: "comics_detail"
+
+# 相似推荐向量库（可选）—— 把漫画简介转成向量做语义搜索，找相似漫画
+# 需要阿里云 DashScope API Key：https://dashscope.aliyuncs.com
+# 不需要可关闭：similar_enabled: false
 embedding_api_key: ""
-embedding_api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+embedding_api_base: ""
 similar_enabled: true
-image_quality: "standard"
+image_quality: "original"

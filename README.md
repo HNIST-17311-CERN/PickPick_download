@@ -2,6 +2,14 @@
 
 通过逆向工程的 API 签名算法调用哔咔漫画 Web API，实现收藏列表同步、漫画详情获取、图片批量下载和本地浏览。
 
+## 安装
+
+**Windows** — 双击 `setup.bat`
+
+**macOS / Linux** — 终端运行 `bash setup.sh`
+
+脚本自动创建虚拟环境、安装依赖、复制配置文件。完成后编辑 `config.yaml` 填入凭证，启动 `python server.py`，浏览器访问 `http://localhost:8000`。
+
 ## 获取凭证
 
 两种方式任选其一：
@@ -38,17 +46,27 @@
 
 ## 配置说明
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `token` / `nonce` | — | API 凭证，可通过邮箱登录自动获取 |
-| `download_dir` | `comics_detail` | 漫画下载目录 |
-| `page_concurrency` | 3 | 图片并发下载数 |
-| `chapter_concurrency` | 1 | 章节并发数 |
-| `comic_concurrency` | 1 | 漫画并发数 |
-| `max_retries` | 30 | API 请求最大重试次数 |
-| `request_delay` | 1.5 | API 请求间隔（秒） |
-| `proxy` | — | HTTP 代理地址 |
-| `image_quality` | `standard` | 图片画质（standard / original） |
+所有配置均可在 Web 设置页面直接修改，也可手动编辑 `config.yaml`：
+
+| 配置项 | 说明 |
+|--------|------|
+| 邮箱 / 密码 | 登录自动获取 token 和 nonce |
+| Token (JWT) | API 鉴权令牌，可手动填写或通过邮箱登录获取 |
+| Nonce | 签名随机数，可手动填写或通过邮箱登录获取 |
+| 代理地址 | HTTP 代理，如 `http://127.0.0.1:7890` |
+| API 地址 | Pica API 基础地址 |
+| 图片代理域名 | 图片 CDN 域名 |
+| 图片并发数 | 单话内并发下载数 |
+| 章节并发数 | 同时下载的章节数 |
+| 漫画并发数 | 同时下载的漫画数 |
+| 最大重试次数 | API 请求失败重试上限 |
+| 下载目录 | 漫画文件存储路径 |
+| 图片画质 | `standard` 标准 / `original` 原画 |
+| 界面风格 | 默认黑色 / PicaWeb 风格 |
+| 模糊模式 | 不加载图片，方便浏览目录 |
+| 启用相似推荐 | 开关向量库功能，把漫画简介转为向量做语义搜索找相似漫画 |
+| Embedding API Key | 阿里云 DashScope 的 API Key（https://dashscope.aliyuncs.com），不需要可关闭 |
+| 向量数据库 | 更新/查看/清除本地向量库 |
 
 ## 项目结构
 

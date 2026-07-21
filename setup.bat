@@ -1,10 +1,10 @@
 @echo off
-title 哔咔漫画爬虫 — 环境安装
+title PicaDownload — 环境安装
 cd /d "%~dp0"
 
 echo.
 echo ============================================================
-echo   哔咔漫画爬虫 — 一键环境安装
+echo   PicaDownload — 一键环境安装
 echo ============================================================
 echo.
 
@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-echo [✓] Python 已检测: 
+echo [✓] Python 已检测:
 python --version
 echo.
 
