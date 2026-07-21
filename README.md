@@ -2,46 +2,6 @@
 
 通过逆向工程的 API 签名算法调用哔咔漫画 Web API，实现收藏列表同步、漫画详情获取、图片批量下载和本地浏览。
 
-## 快速上手
-
-### 方式一：直接下载 EXE（无需 Python）
-
-> **⚠ 注意：Release 版本过低，不建议使用，建议使用源码方式运行。**
-
-从 [Releases](https://github.com/HNIST-17311-CERN/PickPick_download/releases) 下载 `PicaScraper.exe`，双击运行，浏览器访问 `http://localhost:8000`。
-
-首次运行会自动创建 `config.yaml`，在设置页填入账号或 token 即可使用。漫画数据和配置文件都会保存在 exe 所在目录。
-
-### 方式二：一键安装
-
-**Windows** — 双击 `setup.bat`
-
-**macOS / Linux** — 终端运行 `bash setup.sh`
-
-脚本会自动创建虚拟环境、安装依赖、复制配置文件。
-
-### 方式三：手动安装
-
-```bash
-git clone https://github.com/HNIST-17311-CERN/PickPick_download.git
-cd PickPick_download
-
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-cp config.example.yaml config.yaml
-python server.py             # 浏览器打开 http://localhost:8000
-```
-
-### 打包为 EXE
-
-```bash
-pip install pyinstaller
-pyinstaller --noconfirm --clean PicaScraper.spec
-# 输出在 dist/PicaScraper.exe
-```
-
 ## 获取凭证
 
 两种方式任选其一：
