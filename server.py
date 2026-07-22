@@ -3,10 +3,23 @@
 启动: python server.py
 """
 import shutil
+import socket
 import sys
 from pathlib import Path
 
 import uvicorn
+
+
+def get_local_ips() -> list[str]:
+    ips = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None):
+            addr = info[4][0]
+            if addr not in ips and not addr.startswith("127.") and ":" not in addr:
+                ips.append(addr)
+    except Exception:
+        pass
+    return ips
 
 
 def _bundle_dir() -> Path:
@@ -54,11 +67,15 @@ def first_run_setup() -> None:
 if __name__ == "__main__":
     import app.main  # 确保 PyInstaller 追踪所有 app 子模块
     first_run_setup()
+    PORT = 8000
+    print(f"  本机访问: http://127.0.0.1:{PORT}")
+    for ip in get_local_ips():
+        print(f"  手机访问: http://{ip}:{PORT}")
     is_frozen = getattr(sys, "frozen", False)
     uvicorn.run(
         "app.main:app",
-        host="127.0.0.1",
-        port=8000,
+        host="0.0.0.0",
+        port=PORT,
         reload=not is_frozen,
         reload_dirs=["app"] if not is_frozen else [],
         reload_excludes=["*.json", "comics_detail/*", "__pycache__/*"] if not is_frozen else [],

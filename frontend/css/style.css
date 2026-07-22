@@ -107,3 +107,49 @@ a{color:inherit;text-decoration:none}
 .hl{color:#f59e0b;font-style:normal;font-weight:700}
 .search-grid .card img{aspect-ratio:3/4;object-fit:cover}
 @media(max-width:640px){.header-search{width:100px;font-size:.75em}}
+
+/* ========== 移动端适配 ========== */
+@media(max-width:768px){
+  .topbar{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .topbar h1{font-size:1em}
+  .topbar nav{gap:2px;order:3;width:100%;justify-content:center;margin-top:4px}
+  .topbar nav a{padding:6px 10px;font-size:.78em;border-radius:4px}
+  .container{padding:12px 10px}
+  .toolbar{gap:8px}
+  .toolbar select,.toolbar input{font-size:.8em;padding:6px 8px}
+  .toolbar button{padding:6px 10px;font-size:.8em}
+  .grid{grid-template-columns:repeat(3,1fr);gap:10px}
+  .card .info{padding:6px 8px 4px}
+  .card .title{font-size:.78em}
+  .card .meta{font-size:.7em}
+  .detail-header{flex-direction:column;align-items:center;text-align:center;gap:14px}
+  .detail-header img{width:140px}
+  .detail-header h2{font-size:1.15em}
+  .detail-header p{font-size:.78em}
+  .chapter-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .reader-toolbar{gap:8px;padding:8px 0}
+  .reader-toolbar button,.reader-toolbar select{padding:6px 10px;font-size:.75em}
+  .scroll-mode img{max-width:100%;height:auto}
+  .dl-card{padding:12px}
+  .dl-card h3{font-size:.95em}
+  .dl-card .dl-name{font-size:.85em}
+  .pager{gap:10px;padding:14px 0}
+  .pager button{padding:6px 14px;font-size:.8em}
+  .hero-search{font-size:.9em;padding:10px 14px}
+}
+
+@media(max-width:480px){
+  .topbar{padding:8px 8px}
+  .topbar nav a{padding:5px 8px;font-size:.7em}
+  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .detail-header img{width:110px}
+  .detail-header h2{font-size:1em}
+  .chapter-grid{grid-template-columns:1fr}
+  .reader-toolbar .mode-switch button{padding:5px 8px}
+  .flip-nav{gap:12px}
+  .flip-nav button{width:40px;height:40px;font-size:1.2em}
+  .flip-nav .page-num{min-width:60px;font-size:.75em}
+  .btn-back{padding:4px 10px;font-size:.75em;margin-bottom:10px}
+  .desc{font-size:.78em}
+  .toolbar span{font-size:.75em;margin-left:0;width:100%}
+}
