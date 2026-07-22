@@ -40,6 +40,12 @@
 
 ## 安装
 
+### 一、
+
+release下载最新版本exe，一键运行
+
+### 二、
+
 **Windows** — 双击 `setup.bat`
 
 **macOS / Linux** — 终端运行 `bash setup.sh`
