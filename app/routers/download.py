@@ -48,8 +48,14 @@ async def api_download_start(
     target = data.get("target", "all")
     targets = data.get("targets")  # list[int], 1-based 索引
     comic_ids = data.get("comic_ids")  # list[str], 漫画 _id
+    use_queue = data.get("use_queue", False)  # 使用手动下载队列
     from app.repositories.config_repo import ConfigRepo
     cfg = ConfigRepo().read()
+    if use_queue:
+        from app.repositories.download_repo import DownloadQueueRepo
+        queue_ids = DownloadQueueRepo().get_ids()
+        if queue_ids:
+            comic_ids = queue_ids
     if not cfg.get("token"):
         raise HTTPException(401, "请先登录")
     page_conc = int(data.get("page_concurrency", cfg.get("page_concurrency", 3)))
@@ -89,6 +95,72 @@ async def api_download_start(
                                 image_quality=image_quality, state_mgr=state_mgr)
         )
     state_mgr._task = task
+    return {"ok": True}
+
+
+@router.get("/queue/list")
+async def api_dl_queue():
+    from app.repositories.download_repo import DownloadQueueRepo
+    from app.repositories.comic_repo import ComicsMetadataRepo, ComicsDetailRepo
+    queue_repo = DownloadQueueRepo()
+    ids = queue_repo.get_ids()
+    comics = ComicsMetadataRepo().load_all()
+    detail_repo = ComicsDetailRepo()
+    items = []
+    for cid in ids:
+        comic = next((c for c in comics if c.get("_id") == cid), None)
+        if not comic:
+            continue
+        folder = None
+        if detail_repo._base.exists():
+            for d in detail_repo._base.glob("*"):
+                if not d.is_dir(): continue
+                mp = d / "metadata.json"
+                try:
+                    if mp.exists():
+                        with open(mp, "r", encoding="utf-8") as f:
+                            if json.load(f).get("_id") == cid:
+                                folder = d
+                                break
+                except Exception:
+                    pass
+        chapters = detail_repo.read_chapters(folder) if folder else []
+        done = sum(1 for ch in chapters if ch.get("downloaded", 0) >= ch.get("totalPages", 1))
+        items.append({
+            "_id": cid,
+            "title": comic.get("title", "?"),
+            "author": comic.get("author", ""),
+            "epsCount": comic.get("epsCount", 0),
+            "ch_done": done,
+            "ch_total": len(chapters),
+        })
+    return {"ids": ids, "items": items, "total": len(items)}
+
+
+@router.post("/queue/add")
+async def api_dl_queue_add(data: dict):
+    cid = data.get("comic_id", "")
+    if not cid:
+        return {"ok": False, "error": "缺少 comic_id"}
+    from app.repositories.download_repo import DownloadQueueRepo
+    DownloadQueueRepo().add(cid)
+    return {"ok": True}
+
+
+@router.post("/queue/remove")
+async def api_dl_queue_remove(data: dict):
+    cid = data.get("comic_id", "")
+    if not cid:
+        return {"ok": False, "error": "缺少 comic_id"}
+    from app.repositories.download_repo import DownloadQueueRepo
+    DownloadQueueRepo().remove(cid)
+    return {"ok": True}
+
+
+@router.post("/queue/clear")
+async def api_dl_queue_clear():
+    from app.repositories.download_repo import DownloadQueueRepo
+    DownloadQueueRepo().clear()
     return {"ok": True}
 
 

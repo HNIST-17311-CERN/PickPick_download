@@ -230,10 +230,11 @@ async function startBatchDownload(items) {
 
 // ==== 下载管理 ====
 async function renderDownload() {
-  const [cfg, status, queue] = await Promise.all([
+  const [cfg, status, queue, dlQueue] = await Promise.all([
     fetchJSON(`${API}/config`),
     fetchJSON(`${API}/download/status`),
-    fetchJSON(`${API}/download/queue`)
+    fetchJSON(`${API}/download/queue`),
+    fetchJSON(`${API}/download/queue/list`)
   ]);
   window._dlCfg = cfg;
 
@@ -261,6 +262,32 @@ async function renderDownload() {
         <button id="btnDlNew" class="btn" style="background:#333;color:#fbbf24;font-size:.75em;padding:4px 10px">⬇ 下载新增</button>
       ` : ''}
       <button id="btnStopTop" class="btn" style="background:#dc2626;color:#fff;font-size:.8em;padding:4px 14px;font-weight:600;display:${status.running ? '' : 'none'}" onclick="window._dlAborted=true;fetch(API+'/download/stop',{method:'POST'})">⏹ 终止下载</button>
+    </div>
+
+    <!-- 当前下载队列 -->
+    <div id="dlQueuePanel" style="margin-bottom:24px">
+      ${dlQueue.total > 0 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <h3 style="margin:0;font-size:.95em;color:#e0e0e0">📋 当前下载队列 (${dlQueue.total} 部)</h3>
+        <div style="display:flex;gap:8px">
+          <button id="btnDlQueue" class="btn btn-primary" style="font-size:.8em;padding:4px 14px;font-weight:600">⬇ 下载队列</button>
+          <button id="btnClearQueue" class="btn" style="background:#333;color:#f87171;font-size:.75em;padding:4px 10px">清空</button>
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:8px;max-height:300px;overflow-y:auto">
+        ${dlQueue.items.map(item => `
+          <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #ffffff06;font-size:.85em">
+            <span style="flex:1;color:#ddd">${item.title}</span>
+            <span style="color:#888;margin-right:12px">${item.epsCount||0}话 · ${item.ch_done}/${item.ch_total}已下</span>
+            <button class="btnRemoveQue" data-cid="${item._id}" style="background:transparent;color:#f87171;border:none;cursor:pointer;font-size:.85em;padding:2px 6px" title="移出队列">✕</button>
+          </div>
+        `).join('')}
+      </div>
+      ` : `
+      <div style="text-align:center;padding:20px;color:#555;font-size:.85em;background:#1a1a1a;border-radius:8px">
+        队列为空 — 在收藏页点击「⬇ 下载」将漫画加入队列
+      </div>
+      `}
     </div>
 
 
@@ -334,6 +361,57 @@ async function renderDownload() {
     btnNew.disabled = true; btnNew.textContent = '下载中...';
     await startBatchDownload(newItems);
   };
+
+  // 队列按钮
+  const btnDlQueue = document.getElementById('btnDlQueue');
+  if (btnDlQueue) btnDlQueue.onclick = async () => {
+    if (!confirm('确定下载队列中的 ' + dlQueue.total + ' 部漫画？')) return;
+    btnDlQueue.disabled = true; btnDlQueue.textContent = '下载中...';
+    await fetch(API + '/download/start', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({use_queue: true, page_concurrency: cfg.page_concurrency || 3, chapter_concurrency: cfg.chapter_concurrency || 1, comic_concurrency: cfg.comic_concurrency || 1})
+    });
+    connectSSEStream(
+      (msg) => {
+        appendLog(document.getElementById('dlLog'), msg.text + '\n');
+        if (msg.text && msg.text.startsWith('__PROGRESS__')) {
+          const parts = msg.text.split(' ');
+          if (parts.length >= 2) {
+            const dt = parts[1].split('/');
+            if (dt.length === 2) {
+              document.getElementById('dlProgBar').style.width = (dt[1] > 0 ? Math.round(dt[0]/dt[1]*100) : 0) + '%';
+              document.getElementById('dlProgText').textContent = dt[0] + '/' + dt[1];
+              document.getElementById('dlProgPct').textContent = (dt[1] > 0 ? Math.round(dt[0]/dt[1]*100) : 0) + '%';
+            }
+          }
+        }
+      },
+      (skips) => {
+        if (skips && skips.length > 0) {
+          const sa = document.getElementById('dlSkipArea');
+          if (sa) sa.innerHTML = '<details><summary style="color:#fbbf24;cursor:pointer;font-size:.85em">跳过 ' + skips.length + ' 项</summary>' + skips.map(s => '<div style="color:#888;font-size:.8em;margin-left:12px">' + s.item + ': ' + s.reason + '</div>').join('') + '</details>';
+        }
+        renderDownload();
+      },
+      () => { renderDownload(); }
+    );
+  };
+
+  const btnClearQueue = document.getElementById('btnClearQueue');
+  if (btnClearQueue) btnClearQueue.onclick = async () => {
+    await fetch(API + '/download/queue/clear', {method:'POST'});
+    renderDownload();
+  };
+
+  document.querySelectorAll('.btnRemoveQue').forEach(btn => {
+    btn.onclick = async () => {
+      await fetch(API + '/download/queue/remove', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({comic_id: btn.dataset.cid})
+      });
+      renderDownload();
+    };
+  });
 
   // 同步收藏
   document.getElementById('btnSyncFav').onclick = async () => {

@@ -112,10 +112,12 @@ class ComicService:
         meta = self._detail.read_metadata(folder) or {}
         chapters = self._detail.read_chapters(folder)
         has_cover = self._detail.has_cover(folder)
+        eps = meta.get("epsCount", 0)
+        is_dl = len(chapters) > 0 and len(chapters) >= eps and all(ch.get("downloaded", 0) >= ch.get("totalPages", 1) for ch in chapters)
         return {
             "folder": folder_name,
             "local_folder": folder_name,
-            "is_downloaded": True,
+            "is_downloaded": is_dl,
             "meta": meta,
             "chapters": chapters,
             "has_cover": has_cover,
@@ -180,13 +182,15 @@ class ComicService:
                 if fs and path:
                     cover_url = f"{fs}/static/{path}"
 
+            eps_count = api_comic.get("epsCount", 0)
+            is_dl = local_folder is not None and len(local_chapters) > 0 and len(local_chapters) >= eps_count and all(ch.get("downloaded", 0) >= ch.get("totalPages", 1) for ch in local_chapters)
             return {
                 "folder": f"idx_{idx + 1}",
                 "comic_idx": idx + 1,
                 "from_api": True,
                 "is_favourited": True,
                 "local_folder": local_folder.name if local_folder else None,
-                "is_downloaded": local_folder is not None,
+                "is_downloaded": is_dl,
                 "meta": {
                     "_id": api_comic.get("_id", cid),
                     "title": api_comic.get("title") or c.get("title"),
@@ -260,12 +264,14 @@ class ComicService:
                 if fs and path:
                     cover_url = f"{fs}/static/{path}"
 
+            eps_count = api_comic.get("epsCount", 0)
+            is_dl = local_folder is not None and len(local_chapters) > 0 and len(local_chapters) >= eps_count and all(ch.get("downloaded", 0) >= ch.get("totalPages", 1) for ch in local_chapters)
             return {
                 "folder": f"_id-{comic_id}",
                 "from_api": True,
                 "is_favourited": is_fav,
                 "local_folder": local_folder.name if local_folder else None,
-                "is_downloaded": local_folder is not None,
+                "is_downloaded": is_dl,
                 "meta": {
                     "_id": api_comic.get("_id", comic_id),
                     "title": api_comic.get("title", ""),

@@ -90,34 +90,39 @@ async function renderDetail(comicId) {
     }
     if (btnDownload) {
       btnDownload.onclick = async function() {
-      var idx = data.comic_idx;
-      if (!idx && comicId.startsWith('idx_')) {
-        idx = parseInt(comicId.replace('idx_', ''));
-      }
-      var body = { page_concurrency: 3, chapter_concurrency: 1, comic_concurrency: 1 };
-      if (idx) {
-        body.targets = [idx];
-      } else if (m._id) {
-        body.comic_ids = [m._id];
-      } else {
-        alert('无法获取漫画信息');
-        return;
-      }
-      if (!confirm('确定下载「' + (m.title || '?') + '」？')) return;
+      var cid = m._id;
+      if (!cid) { alert('无法获取漫画信息'); return; }
+      btnDownload.textContent = '加入中...';
+      btnDownload.disabled = true;
       try {
-        var res = await fetch(API + '/download/start', {
+        await fetch(API + '/download/queue/add', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(body)
+          body: JSON.stringify({comic_id: cid})
         });
-        if (res.ok) {
-          alert('已加入下载队列');
+        var st = await fetchJSON(API + '/download/status');
+        if (st.running) {
+          btnDownload.textContent = '✅ 已加入队列';
+          btnDownload.style.background = '#333';
+          btnDownload.style.color = '#4ade80';
         } else {
-          var j = await res.json();
-          alert('下载失败: ' + (j.detail || res.status));
+          var r = await fetch(API + '/download/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({use_queue: true, page_concurrency: 80, chapter_concurrency: 2, comic_concurrency: 1})
+          });
+          if (r.ok) {
+            btnDownload.textContent = '✅ 下载已启动';
+          } else {
+            btnDownload.textContent = '✅ 已加入队列';
+            btnDownload.style.background = '#333';
+            btnDownload.style.color = '#4ade80';
+          }
         }
       } catch(e) {
         alert('请求失败: ' + e.message);
+        btnDownload.textContent = '⬇ 下载';
+        btnDownload.disabled = false;
       }
     };
     }

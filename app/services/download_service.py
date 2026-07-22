@@ -163,11 +163,12 @@ class DownloadService:
         for idx, c in enumerate(comics):
             cid = c.get("_id", "")
             entry = id_map.get(cid)
-            # 已完成的检查是否有新章节：API epsCount > 本地章节数 → 放回队列
+            # 已完成的检查：章节数匹配 + 每话都下完才是真正完成
             if cid in completed:
                 api_eps = c.get("epsCount", 0)
                 local_eps = entry[2] if entry else 0
-                if api_eps <= local_eps:
+                local_done = entry[1] if entry else 0
+                if api_eps <= local_eps and local_done >= local_eps:
                     continue
             if entry:
                 d, ch_done, ch_total = entry
@@ -226,12 +227,9 @@ class DownloadService:
                 actual_indices = self.parse_target(target or "all", len(comics))
             completed = self._progress.get_completed_ids()
 
-            remaining = [i for i in actual_indices if comics[i].get("_id", f"idx_{i}") not in completed]
-            if len(remaining) < len(actual_indices):
-                await state_mgr.log(f"跳过 {len(actual_indices) - len(remaining)} 部已完成，剩余 {len(remaining)} 部")
-
-            # 构建 _id → folder 映射
+            # 构建 _id → folder 映射 + 章节完成状态
             id_map = {}
+            ch_status = {}
             if self._detail._base.exists():
                 for d in self._detail._base.glob("*"):
                     if not d.is_dir():
@@ -240,9 +238,26 @@ class DownloadService:
                     if mp.exists():
                         try:
                             with open(mp, "r", encoding="utf-8") as f:
-                                id_map[json.load(f).get("_id")] = d
+                                cid = json.load(f).get("_id")
+                            if cid:
+                                id_map[cid] = d
+                                chapters = self._detail.read_chapters(d)
+                                done = sum(1 for ch in chapters if ch.get("downloaded", 0) >= ch.get("totalPages", 1))
+                                ch_status[cid] = (done, len(chapters))
                         except Exception:
                             pass
+
+            remaining = []
+            for i in actual_indices:
+                cid = comics[i].get("_id", f"idx_{i}")
+                if cid in completed:
+                    s = ch_status.get(cid)
+                    eps = comics[i].get("epsCount", 0)
+                    if s and s[0] >= s[1] and s[1] >= eps:
+                        continue  # 真正的全部完成
+                remaining.append(i)
+            if len(remaining) < len(actual_indices):
+                await state_mgr.log(f"跳过 {len(actual_indices) - len(remaining)} 部已完成，剩余 {len(remaining)} 部")
 
             comic_sem = asyncio.Semaphore(comic_concurrency)
 

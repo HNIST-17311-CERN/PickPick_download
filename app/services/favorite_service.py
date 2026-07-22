@@ -89,8 +89,9 @@ class FavoriteService:
         for i, c in enumerate(all_comics):
             cid = c.get("_id", "")
             scan = id_map.get(cid)
+            eps_count = c.get("epsCount", 0)
             if scan:
-                if scan["chapter_total"] > 0 and scan["chapter_done"] >= scan["chapter_total"]:
+                if scan["chapter_done"] >= eps_count and eps_count > 0:
                     dl_status = "downloaded"
                 elif scan["chapter_done"] > 0:
                     dl_status = "partial"
