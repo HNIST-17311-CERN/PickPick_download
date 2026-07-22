@@ -21,6 +21,8 @@
   }
   #btnBackTop:hover { transform: scale(1.1); }
 
+  .topbar { display: none !important; }
+
   /* ==== 专注模式 ==== */
   body.focus-mode .topbar { display: none !important; }
   body.focus-mode .btn-back { display: none !important; }
@@ -54,7 +56,7 @@
 
 <button id="btnBackTop" title="回到顶部">⬆</button>
 
-<script src="js/common.js?v=19"></script>
+<script src="js/common.js?v=20"></script>
 <script>
 const app = document.getElementById('app');
 renderTopbar('');
@@ -78,7 +80,7 @@ async function renderReader(folder, order) {
   const chIdx = chs.findIndex(c => c.order === order);
 
   app.innerHTML = `
-    <button class="btn-back" onclick="window.parent!==window?window.parent.document.exitFullscreen():location.replace('detail.html?id=${encodeURIComponent(folder)}')">← 返回详情</button>
+    <button class="btn-back" onclick="if(window.parent!==window){window.parent.postMessage({type:'closeReader'},'*')}else{location.replace('detail.html?id=${encodeURIComponent(folder)}')}">← 返回详情</button>
     <div class="reader-toolbar">
       <select id="chSelect">${chOptions}</select>
       <span style="color:#888;font-size:.85em">${images.length} 张</span>
@@ -109,19 +111,47 @@ async function renderReader(folder, order) {
   const buildUrl = (o, m, z) => `reader.html?folder=${encodeURIComponent(folder)}&order=${o}&mode=${m}&zoom=${z}${focus?'&focus=1':''}`;
 
   function renderScroll() {
+    const hasPrev = chIdx > 0;
+    const prevCh = hasPrev ? chs[chIdx - 1] : null;
     const hasNext = chIdx < chs.length - 1;
     const nextCh = hasNext ? chs[chIdx + 1] : null;
-    readerArea.innerHTML = `<div class="scroll-mode">${images.map(img =>
-      `<img src="${resolveUrl(img.url)}" alt="${img.filename}" loading="lazy" style="${sizeCss}">`
-    ).join('')}${
-      hasNext ? `
-      <div style="text-align:center;padding:24px 0">
-        <button class="btn btn-primary" style="padding:12px 32px;font-size:1em"
-          onclick="goReader('${buildUrl(nextCh.order, mode, zoom)}')">
-          ➡ 下一话：${nextCh.title||'第'+nextCh.order+'话'}
-        </button>
-      </div>` : ''
-    }</div>`;
+
+    readerArea.innerHTML = '';
+    const container = document.createElement('div');
+    container.className = 'scroll-mode';
+
+    for (const img of images) {
+      const el = document.createElement('img');
+      el.src = resolveUrl(img.url);
+      el.alt = img.filename;
+      el.loading = 'lazy';
+      el.style.cssText = sizeCss;
+      container.appendChild(el);
+    }
+
+    if (hasPrev || hasNext) {
+      const nav = document.createElement('div');
+      nav.style.cssText = 'text-align:center;padding:24px 0;display:flex;justify-content:center;gap:16px';
+      if (hasPrev) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.style.cssText = 'padding:12px 32px;font-size:1em';
+        btn.textContent = '\u2B05 \u4E0A\u4E00\u8BDD\uFF1A' + (prevCh.title || ('\u7B2C' + prevCh.order + '\u8BDD'));
+        btn.onclick = () => goReader(buildUrl(prevCh.order, mode, zoom));
+        nav.appendChild(btn);
+      }
+      if (hasNext) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.style.cssText = 'padding:12px 32px;font-size:1em';
+        btn.textContent = '\u27A1 \u4E0B\u4E00\u8BDD\uFF1A' + (nextCh.title || ('\u7B2C' + nextCh.order + '\u8BDD'));
+        btn.onclick = () => goReader(buildUrl(nextCh.order, mode, zoom));
+        nav.appendChild(btn);
+      }
+      container.appendChild(nav);
+    }
+
+    readerArea.appendChild(container);
   }
 
   function renderFlip() {
@@ -249,16 +279,16 @@ async function renderReader(folder, order) {
   const zSlider = document.getElementById('zSlider');
   if (zSlider) {
     const zVal = document.getElementById('zVal');
-    zSlider.oninput = () => {
-      const z = zSlider.value;
-      if (zVal) zVal.textContent = z + '%';
-      const pct = z === '100' ? '100%' : z + '%';
-      const vw = z === '100' ? '100vw' : z + 'vw';
-      document.querySelectorAll('#readerArea img').forEach(img => {
-        img.style.width = pct;
-        img.style.maxWidth = vw;
-      });
-    };
+      zSlider.oninput = () => {
+        const z = zSlider.value;
+        if (zVal) zVal.textContent = z + '%';
+        const pct = z === '100' ? '100%' : z + '%';
+        const vw = z === '100' ? '100vw' : z + 'vw';
+        document.querySelectorAll('#readerArea img').forEach(img => {
+          img.style.width = pct;
+          img.style.maxWidth = vw;
+        });
+      };
     zSlider.onchange = () => {
       goReader(buildUrl(order, mode, +zSlider.value));
     };

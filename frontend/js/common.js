@@ -122,11 +122,12 @@ window._updateReaderFrame = function(url) {
   }
 };
 
-// 退出全屏时清理浮层
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
+// iframe 内通过 postMessage 通知父窗口关闭阅读器
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'closeReader') {
     const overlay = document.getElementById('readerOverlay');
     if (overlay) {
+      if (document.fullscreenElement) document.exitFullscreen();
       overlay.remove();
       if (history.state && history.state.readerOverlay) history.back();
     }
