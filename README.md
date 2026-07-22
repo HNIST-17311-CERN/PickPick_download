@@ -2,6 +2,42 @@
 
 通过逆向工程的 API 签名算法调用哔咔漫画 Web API，实现收藏列表同步、漫画详情获取、图片批量下载和本地浏览。
 
+## 图形化界面方便操作
+
+![image-20260722180752745](C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722180752745.png)
+
+## 多线程异步一键下载（支持批量和单部下载），速度更快
+
+![image-20260722181245254](C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722181245254.png)
+
+## 本地管理导入导出
+
+![image-20260722181335833](C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722181335833.png)
+
+## 自带阅读，随下随看
+
+![image-20260722181434475](C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722181434475.png)
+
+![image-20260722181556519](C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722181556519.png)
+
+### 专注模式及移动端界面
+
+<img src="C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722181953717.png" alt="image-20260722181953717" style="zoom:25%;" />
+
+
+
+## 两种主题风格
+
+### 哔咔网站颜色：
+
+<img src="C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722180302880.png" alt="image-20260722180302880" style="zoom: 50%;" />
+
+### 默认黑色：
+
+<img src="C:\Users\24405\AppData\Roaming\Typora\typora-user-images\image-20260722180454338.png" alt="image-20260722180454338" style="zoom:50%;" />
+
+
+
 ## 安装
 
 **Windows** — 双击 `setup.bat`
