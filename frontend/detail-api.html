@@ -24,7 +24,6 @@
 <script src="js/common.js?v=20"></script>
 <script>
 const app = document.getElementById('app');
-const _favSet = new Set(JSON.parse(sessionStorage.getItem('favSet') || '[]'));
 renderTopbar('');
 
 async function renderDetail(comicId) {
@@ -49,7 +48,7 @@ async function renderDetail(comicId) {
             ${data.is_downloaded
               ? `<a href="detail.html?folder=${encodeURIComponent(data.local_folder)}" class="btn btn-primary" style="text-decoration:none">📖 本地阅读</a><button class="btn" style="background:#2a2a2a;color:#555;cursor:not-allowed" disabled>⬇ 已下载</button>`
               : '<button id="btnDownload" class="btn btn-primary">⬇ 下载</button>'}
-            ${!data.is_favourited && !_favSet.has(m._id) ? '<button id="btnFav" class="btn" style="background:#e11d48;color:#fff">❤️ 收藏</button>' : ''}
+            ${!data.is_favourited ? '<button id="btnFav" class="btn" style="background:#e11d48;color:#fff">❤️ 收藏</button>' : ''}
           </div>
         </div>
       </div>
@@ -81,9 +80,7 @@ async function renderDetail(comicId) {
         try {
           const r = await fetch(API + '/favourite', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({comic_id: m._id})});
           if (r.ok) {
-            _favSet.add(m._id);
-            sessionStorage.setItem('favSet', JSON.stringify([..._favSet]));
-            btnFav.textContent = '❤️ 已收藏'; btnFav.style.background = '#333'; btnFav.style.color = '#4ade80';
+            btnFav.remove();
           } else { alert('收藏失败'); btnFav.disabled = false; btnFav.textContent = '❤️ 收藏'; }
         } catch(e) { alert('请求失败: ' + e.message); btnFav.disabled = false; btnFav.textContent = '❤️ 收藏'; }
       };
